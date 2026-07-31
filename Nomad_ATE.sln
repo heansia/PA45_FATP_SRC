@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.36631.11
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nomad_ATE", "FCT\Nomad_ATE.csproj", "{0C20922C-D44F-4C65-884E-1E1C63F85E94}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "USB_Communicate", "USB_Communicate\USB_Communicate.csproj", "{A98DE1EC-8BF8-48B4-B460-A6F38CD27426}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0C20922C-D44F-4C65-884E-1E1C63F85E94}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C20922C-D44F-4C65-884E-1E1C63F85E94}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C20922C-D44F-4C65-884E-1E1C63F85E94}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C20922C-D44F-4C65-884E-1E1C63F85E94}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A98DE1EC-8BF8-48B4-B460-A6F38CD27426}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A98DE1EC-8BF8-48B4-B460-A6F38CD27426}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A98DE1EC-8BF8-48B4-B460-A6F38CD27426}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A98DE1EC-8BF8-48B4-B460-A6F38CD27426}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7BBBF82C-42AB-4B70-A17A-7B07837A4CD4}
+	EndGlobalSection
+EndGlobal

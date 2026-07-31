@@ -1,0 +1,399 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{0C20922C-D44F-4C65-884E-1E1C63F85E94}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>FCT</RootNamespace>
+    <AssemblyName>Nomad_ATE</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>1</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <PublishWizardCompleted>true</PublishWizardCompleted>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>
+    </StartupObject>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>combined %281%29.ico</ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestCertificateThumbprint>39BD25867C7F0D9C44FEE0D7C2CC50252131AA57</ManifestCertificateThumbprint>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ManifestKeyFile>Nomad_ATE_TemporaryKey.pfx</ManifestKeyFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <GenerateManifests>true</GenerateManifests>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignManifests>true</SignManifests>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Interop.LabelManager2, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>bin\Debug\Interop.LabelManager2.dll</HintPath>
+    </Reference>
+    <Reference Include="InTheHand.Net.Personal">
+      <HintPath>Lib\3.7 (binaries)\NET\InTheHand.Net.Personal.dll</HintPath>
+    </Reference>
+    <Reference Include="Ivi.Visa, Version=7.2.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Ivi.Visa\Ivi.Visa.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="Microsoft.VisualBasic.Compatibility" />
+    <Reference Include="NationalInstruments.Visa, Version=19.0.0.49152, Culture=neutral, PublicKeyToken=2eaa5af0834e221d, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\NationalInstruments.Visa\NationalInstruments.Visa.dll</HintPath>
+    </Reference>
+    <Reference Include="Primax.SFCS.DLL, Version=1.0.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\Primax.SFCS.DLL.dll</HintPath>
+    </Reference>
+    <Reference Include="SFCDLL_CommonEx, Version=2.2.0.4, Culture=neutral, PublicKeyToken=1f41658eeebdb502, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\SFCDLL_CommonEx.dll</HintPath>
+    </Reference>
+    <Reference Include="SFCDLL_SPD_Common, Version=1.20.1310.1071, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\SFCDLL_SPD_Common.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Management.Instrumentation" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UIAutomationClient" />
+    <Reference Include="UIAutomationClientsideProviders" />
+    <Reference Include="UIAutomationTypes" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Controllers\ProductController.cs" />
+    <Compile Include="CustomizedAttribute.cs" />
+    <Compile Include="CustomizedEvents.cs" />
+    <Compile Include="Global.cs" />
+    <Compile Include="Models\DUT\BT_Module\BT_Module.cs" />
+    <Compile Include="Models\DUT\DUT.cs" />
+    <Compile Include="Models\DUT\Interface\IDUT.cs" />
+    <Compile Include="Models\DUT\LTSSensor\LTSSensor.cs" />
+    <Compile Include="Models\DUT\PA45\argumentsAttribute.cs" />
+    <Compile Include="Models\DUT\PA45\Media_Type.cs" />
+    <Compile Include="Models\DUT\PA45\Media_Type_Ext.cs" />
+    <Compile Include="Models\DUT\PA45\PA45_Ext.cs" />
+    <Compile Include="Models\DUT\PA45\Printer_Error_Code.cs" />
+    <Compile Include="Models\DUT\PA45\testlabel_list.cs" />
+    <Compile Include="Models\DUT\PA45_KeyBoard\PA45_KeyBoard.cs" />
+    <Compile Include="Models\DUT\PA45\PA45.cs" />
+    <Compile Include="Models\DUT\PA45_MainBoard\PA45_MainBoard.cs" />
+    <Compile Include="Models\DUT\PA45_PowerBoard\PA45_PowerBoard.cs" />
+    <Compile Include="Models\DUT\QBC\Battery\Battery.cs" />
+    <Compile Include="Models\DUT\QBC\I2C\I2C_Battery.cs" />
+    <Compile Include="Models\DUT\QBC\I2C\I2C.cs" />
+    <Compile Include="Models\DUT\QBC\LED\LED.cs" />
+    <Compile Include="Models\DUT\QBC\NTC\NTC.cs" />
+    <Compile Include="Models\DUT\QBC\QBC.cs" />
+    <Compile Include="Models\DUT\TopSensor\TopSensor.cs" />
+    <Compile Include="Models\DUT\USB2ETH\USB2ETH.cs" />
+    <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module.cs" />
+    <Compile Include="Models\Test_Proc_Error_Code.cs" />
+    <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard1.cs" />
+    <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard2.cs" />
+    <Compile Include="Models\Instrument\drag.cs" />
+    <Compile Include="Models\Instrument\Interface\ICaptureCard.cs" />
+    <Compile Include="Models\Instrument\Interface\IRelayCard.cs" />
+    <Compile Include="Models\Instrument\Interface\IInstrument.cs" />
+    <Compile Include="Models\Instrument\KEITHLEY_2306_LAN.cs" />
+    <Compile Include="Models\Products\BT_Module.cs" />
+    <Compile Include="Models\Products\Configuration.cs" />
+    <Compile Include="Models\Products\Interface\IProduct.cs" />
+    <Compile Include="Models\DUT\QBC\I2C\I2C_Current.cs" />
+    <Compile Include="Models\DUT\QBC\I2C\I2C_Status.cs" />
+    <Compile Include="Models\DUT\QBC\LED\LED_ID.cs" />
+    <Compile Include="Models\DUT\QBC\LED\LED_Status.cs" />
+    <Compile Include="Models\DUT\QBC\NTC\NTC_ID.cs" />
+    <Compile Include="Models\Products\Interface\IProductConfig.cs" />
+    <Compile Include="Models\ITestItem.cs" />
+    <Compile Include="Models\Products\Interface\ProductBase.cs" />
+    <Compile Include="Models\Products\LTSSensor.cs" />
+    <Compile Include="Models\Products\PA45_KeyBoard.cs" />
+    <Compile Include="Models\Products\PA45.cs" />
+    <Compile Include="Models\Products\PA45_MainBoard.cs" />
+    <Compile Include="Models\Products\PA45_PowerBoard.cs" />
+    <Compile Include="Models\Products\ProductConfig.cs" />
+    <Compile Include="Models\Products\QBC.cs" />
+    <Compile Include="Models\Products\TopSensor.cs" />
+    <Compile Include="Models\Products\USB2ETH.cs" />
+    <Compile Include="Models\Products\WiFi_BT_Module.cs" />
+    <Compile Include="Models\SFC\Interface\ISFC.cs" />
+    <Compile Include="Models\DUT\PA45\PrinterCommands.cs" />
+    <Compile Include="Models\Products\Product.cs" />
+    <Compile Include="Models\SerialCommon.cs" />
+    <Compile Include="Models\SFC\SFCFactory.cs" />
+    <Compile Include="Models\SFC\SMT_SFC.cs" />
+    <Compile Include="Models\SFC\SSG_SFC.cs" />
+    <Compile Include="Models\SFC\SFCS_Setting.cs" />
+    <Compile Include="Models\Instrument\RelayCard\SSGRelayCard1.cs" />
+    <Compile Include="Models\Instrument\RelayCard\SSGRelayCard2.cs" />
+    <Compile Include="Models\TestItem.cs" />
+    <Compile Include="Models\TestStatusListener.cs" />
+    <Compile Include="Utilities\CsvHelper.cs" />
+    <Compile Include="Utilities\DataAccess.cs" />
+    <Compile Include="Utilities\ICardHelper.cs" />
+    <Compile Include="Utilities\IniFileHelper.cs" />
+    <Compile Include="Utilities\JsonHelpler.cs" />
+    <Compile Include="Utilities\LabelPrintHelper.cs" />
+    <Compile Include="Utilities\ProcessHelper.cs" />
+    <Compile Include="Utilities\RegexHelper.cs" />
+    <Compile Include="Utilities\RelayHelper.cs" />
+    <Compile Include="Utilities\SFCHepler.cs" />
+    <Compile Include="Utilities\SMT_SFCSHelper.cs" />
+    <Compile Include="Utilities\USBHelper.cs" />
+    <Compile Include="Utilities\WinDeviceHelper.cs" />
+    <Compile Include="Utilities\XmlHelper.cs" />
+    <Compile Include="ViewLayer\ControlLibrary\RoundLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\ControlLibrary\uCtrl_RelayCard.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\ControlLibrary\uCtrl_RelayCard.Designer.cs">
+      <DependentUpon>uCtrl_RelayCard.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\ControlLibrary\uCtrl_TestItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\ControlLibrary\uCtrl_TestItem.Designer.cs">
+      <DependentUpon>uCtrl_TestItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmKeybutton.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmKeybutton.Designer.cs">
+      <DependentUpon>frmKeybutton.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmMain.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmMain.Designer.cs">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewLayer\FormLibrary\frmProductMatrix.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmProductMatrix.Designer.cs">
+      <DependentUpon>frmProductMatrix.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmRelay.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmRelay.Designer.cs">
+      <DependentUpon>frmRelay.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmReleaseNote.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmReleaseNote.Designer.cs">
+      <DependentUpon>frmReleaseNote.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSensorTest.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSensorTest.Designer.cs">
+      <DependentUpon>frmSensorTest.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSerialPort.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSerialPort.Designer.cs">
+      <DependentUpon>frmSerialPort.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFCS.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFCS.Designer.cs">
+      <DependentUpon>frmSFCS.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFTP.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFTP.Designer.cs">
+      <DependentUpon>frmSFTP.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmTestItems.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmTestItems.Designer.cs">
+      <DependentUpon>frmTestItems.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmTips.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmTips.Designer.cs">
+      <DependentUpon>frmTips.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmACCPrint.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmACCPrint.Designer.cs">
+      <DependentUpon>frmACCPrint.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="ViewLayer\ControlLibrary\uCtrl_RelayCard.resx">
+      <DependentUpon>uCtrl_RelayCard.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\ControlLibrary\uCtrl_TestItem.resx">
+      <DependentUpon>uCtrl_TestItem.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmKeybutton.resx">
+      <DependentUpon>frmKeybutton.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmMain.resx">
+      <DependentUpon>frmMain.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmProductMatrix.resx">
+      <DependentUpon>frmProductMatrix.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmRelay.resx">
+      <DependentUpon>frmRelay.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmReleaseNote.resx">
+      <DependentUpon>frmReleaseNote.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmSensorTest.resx">
+      <DependentUpon>frmSensorTest.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmSerialPort.resx">
+      <DependentUpon>frmSerialPort.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmSFCS.resx">
+      <DependentUpon>frmSFCS.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmSFTP.resx">
+      <DependentUpon>frmSFTP.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmTestItems.resx">
+      <DependentUpon>frmTestItems.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmTips.resx">
+      <DependentUpon>frmTips.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmACCPrint.resx">
+      <DependentUpon>frmACCPrint.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Nomad_ATE_TemporaryKey.pfx" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="combined %281%29.ico" />
+    <Content Include="combined.ico" />
+    <Content Include="Lib\Ivi.Visa.Interop_32\Ivi.Visa.Interop.dll" />
+    <Content Include="Lib\Ivi.Visa.Interop_64\Ivi.Visa.Interop.dll" />
+    <Content Include="Lib\Ivi.Visa\Ivi.Visa.dll" />
+    <Content Include="Lib\Ivi.Visa\Ivi.Visa.xml" />
+    <Content Include="Lib\Keysight.Visa\Keysight.Visa.dll" />
+    <Content Include="Lib\NationalInstruments.Visa\NationalInstruments.Visa.dll" />
+    <Content Include="Lib\NationalInstruments.Visa\NationalInstruments.Visa.xml" />
+    <Content Include="tester1.ico" />
+    <None Include="download.png" />
+    <None Include="download1.png" />
+    <Content Include="ETRIA-MANUFACTURING-USA-INC.-Logo_former-Ricoh-Electronice-Inc.png" />
+    <Content Include="HON logo_200x37 2.png" />
+    <None Include="last.png" />
+    <None Include="last1_new.png" />
+    <None Include="last1.png" />
+    <Content Include="logo_c.png" />
+    <None Include="power.png" />
+    <None Include="menu.png" />
+    <None Include="OK.png" />
+    <None Include="next.png" />
+    <None Include="next_one.png" />
+    <None Include="power %282%29.png" />
+    <None Include="menu %281%29.png" />
+    <None Include="next1.png" />
+    <Content Include="next1_new.png" />
+    <Content Include="tester.ico" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

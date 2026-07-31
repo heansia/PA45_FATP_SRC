@@ -1,0 +1,30 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FCT.Models.Products.Interface;
+
+namespace FCT.Models.DUT.LTSSensor
+{
+   
+    class LTSSensor : DUT
+    {
+        public LTSSensor(IProduct product) : base(product)
+        {
+            Product = product;
+        }
+
+        public override void Test()
+        {
+            if (TestMethod != null)
+            {
+
+            }
+        }
+
+        public override string VID { get { return "0C2E"; } }
+        public override string PID { get { return "FE32"; } }
+    }
+
+}
