@@ -204,7 +204,7 @@
     <Compile Include="Utilities\USBHelper.cs" />
     <Compile Include="Utilities\WinDeviceHelper.cs" />
     <Compile Include="Utilities\XmlHelper.cs" />
-    <Compile Include="ViewLayer\ControlLibrary\RoundLabel.cs">
+    <Compile Include="ViewLayer\ControlLibrary\CircleLabel.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="ViewLayer\ControlLibrary\uCtrl_RelayCard.cs">
@@ -244,12 +244,6 @@
     </Compile>
     <Compile Include="ViewLayer\FormLibrary\frmRelay.Designer.cs">
       <DependentUpon>frmRelay.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ViewLayer\FormLibrary\frmReleaseNote.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ViewLayer\FormLibrary\frmReleaseNote.Designer.cs">
-      <DependentUpon>frmReleaseNote.cs</DependentUpon>
     </Compile>
     <Compile Include="ViewLayer\FormLibrary\frmSensorTest.cs">
       <SubType>Form</SubType>
@@ -320,9 +314,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ViewLayer\FormLibrary\frmRelay.resx">
       <DependentUpon>frmRelay.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ViewLayer\FormLibrary\frmReleaseNote.resx">
-      <DependentUpon>frmReleaseNote.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="ViewLayer\FormLibrary\frmSensorTest.resx">
       <DependentUpon>frmSensorTest.cs</DependentUpon>

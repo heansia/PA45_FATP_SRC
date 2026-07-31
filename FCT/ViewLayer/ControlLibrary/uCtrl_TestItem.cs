@@ -1,18 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+﻿using System.Windows.Forms;
+using FCT.Models;
 
 namespace FCT.ViewLayer.ControlLibrary
 {
     public partial class uCtrl_TestItem : UserControl
     {
-        public uCtrl_TestItem()
+        public uCtrl_TestItem(ITestItem item)
+        {
+            InitializeComponent();
+        }
+
+        private uCtrl_TestItem()
         {
             InitializeComponent();
         }

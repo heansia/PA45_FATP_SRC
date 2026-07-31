@@ -528,7 +528,6 @@ namespace FCT.ViewLayer.FormLibrary
 
                 lblResult.Text = "Testing...";
                 lblResult.ForeColor = Color.FromArgb(255, 255, 255);
-                lblResult.BackColor = Color.FromArgb(255, 255, 0);
 
                 if (productConfig == null) { goto GET_PROD_CONFIG; }
 
@@ -9490,8 +9489,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void releaseNoteToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            frmReleaseNote form = new frmReleaseNote();
-            form.Show();
+           
         }
 
         private void serialPortToolStripMenuItem_Click(object sender, EventArgs e)
