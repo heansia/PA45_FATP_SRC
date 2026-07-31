@@ -1,16 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using FCT.Models.DUT.Interface;
 using FCT.Models.DUT.PA45;
-using FCT.Models.DUT.PA45_MainBoard;
-using FCT.Models.DUT.LTSSensor;
-using FCT.Models.DUT.BT_Module;
-using FCT.Models.DUT.WiFi_BT_Module;
-
-
 
 namespace FCT.Service.DUT.Service
 {

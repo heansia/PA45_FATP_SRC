@@ -123,6 +123,7 @@
     <Compile Include="Controllers\ProductController.cs" />
     <Compile Include="CustomizedAttribute.cs" />
     <Compile Include="CustomizedEvents.cs" />
+    <Compile Include="Extension\StringExt.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="Models\DUT\BT_Module\BT_Module.cs" />
     <Compile Include="Models\DUT\DUT.cs" />
@@ -188,6 +189,7 @@
     <Compile Include="Models\TestItem.cs" />
     <Compile Include="Models\TestStatusListener.cs" />
     <Compile Include="Service\DUT.Service\HON_Printer_Log_Parser.cs" />
+    <Compile Include="Service\SFCS.Service\SFCS_Service.cs" />
     <Compile Include="Utilities\CsvHelper.cs" />
     <Compile Include="Utilities\DataAccess.cs" />
     <Compile Include="Utilities\ICardHelper.cs" />
@@ -357,10 +359,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Extension\" />
-    <Folder Include="Service\SFCS.Service\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>

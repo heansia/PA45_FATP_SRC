@@ -66,7 +66,6 @@ namespace FCT.Models.DUT.PA45
 
     }
 
-
     public enum uname_option
     {
         //uname -p

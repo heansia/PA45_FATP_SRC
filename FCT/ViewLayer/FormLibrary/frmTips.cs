@@ -32,13 +32,8 @@ namespace FCT.ViewLayer.FormLibrary
 
             if (File.Exists(picture_path))
             {
-
-            }
-            else
-            {
-
-            }
                 picTips.Image = Image.FromFile(picture_path);
+            }
 
             lblTips_zh_cn.Text = zh_cn_msg;
             lblTips_en_us.Text = en_us_msg;
@@ -46,7 +41,6 @@ namespace FCT.ViewLayer.FormLibrary
 
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent; // 相对于父窗口居中
-
         }
 
         private void btnOK_Click(object sender, EventArgs e)

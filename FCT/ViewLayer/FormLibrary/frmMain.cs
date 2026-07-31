@@ -663,7 +663,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 PartNumber = txtPN.Text;
 
-                if (string.IsNullOrEmpty(PartNumber) || string.IsNullOrWhiteSpace(PartNumber)) { return; }
+                if (string.IsNullOrWhiteSpace(PartNumber)) { return; }
 
                 txtSN.Focus();
             }
@@ -712,7 +712,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 value = WinDevice.GetSerialportComPort(vid, pid);
 
-                if ((!string.IsNullOrEmpty(value)) && (value != "COM1"))
+                if ((!string.IsNullOrWhiteSpace(value)) && (value != "COM1"))
                 {
                     AppendRuntimeLog("detected printer startup OK.");
                     rlt = true;
@@ -827,7 +827,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 60; i++)
             {
                 val_temp = GetRuntimeStringFlagA(command);
-                if (!string.IsNullOrEmpty(val_temp) && !string.IsNullOrWhiteSpace(val_temp))
+                if (!string.IsNullOrWhiteSpace(val_temp))
                 {
                     bFlag = true;
                     break;
@@ -904,7 +904,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 60; i++)
             {
                 tmp_val = GetRuntimeStringFlagA(command);
-                if (!string.IsNullOrEmpty(tmp_val) && !string.IsNullOrWhiteSpace(tmp_val))
+                if (!string.IsNullOrWhiteSpace(tmp_val))
                 {
                     bFlag = true;
                     break;
@@ -928,7 +928,7 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             List<string> versions = tmp_val.Split('\n').ToList();
-            versions.RemoveAll(s => string.IsNullOrEmpty(s));
+            versions.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
             foreach (var v in versions)
             {
@@ -939,8 +939,7 @@ namespace FCT.ViewLayer.FormLibrary
             value = w_current + "," + r_current;
 
         End:
-            if (!string.IsNullOrEmpty(w_current) && !string.IsNullOrWhiteSpace(w_current) &&
-                !string.IsNullOrEmpty(r_current) && !string.IsNullOrWhiteSpace(r_current))
+            if (!string.IsNullOrWhiteSpace(w_current) && !string.IsNullOrWhiteSpace(r_current))
             {
                 rlt = true;
             }
@@ -995,7 +994,7 @@ namespace FCT.ViewLayer.FormLibrary
                 for (int i = 0; i < 60; i++)
                 {
                     tmp_val = REGEX.GetString(rtbLog.Text, command, false);
-                    if (!string.IsNullOrEmpty(tmp_val) && !string.IsNullOrWhiteSpace(tmp_val))
+                    if (!string.IsNullOrWhiteSpace(tmp_val))
                     {
                         bFlag = true;
                         break;
@@ -1020,7 +1019,7 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             List<string> values = tmp_val.Split('\n').ToList();
-            values.RemoveAll(s => string.IsNullOrEmpty(s));
+            values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
             if (batteryId == I2C_Battery.BAT_1) { tmp_val = "Bat1 Temp ="; }
             if (batteryId == I2C_Battery.BAT_2) { tmp_val = "Bat2 Temp ="; }
@@ -1039,7 +1038,7 @@ namespace FCT.ViewLayer.FormLibrary
         End:
             resultValue = value;
 
-            if (!string.IsNullOrEmpty(value) && !string.IsNullOrWhiteSpace(value))
+            if (!string.IsNullOrWhiteSpace(value))
             {
                 rlt = true;
             }
@@ -1095,7 +1094,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 60; i++)
             {
                 tmp_val = GetRuntimeStringFlagA(command);
-                if (!string.IsNullOrEmpty(tmp_val) && !string.IsNullOrWhiteSpace(tmp_val))
+                if (!string.IsNullOrWhiteSpace(tmp_val))
                 {
                     bFlag = true;
                     break;
@@ -1119,7 +1118,7 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             List<string> values = tmp_val.Split('\n').ToList();
-            values.RemoveAll(s => string.IsNullOrEmpty(s));
+            values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
             if (batteryId == I2C_Battery.BAT_1) { tmp_val = "Bat1 Cap ="; }
             if (batteryId == I2C_Battery.BAT_2) { tmp_val = "Bat2 Cap ="; }
@@ -1137,7 +1136,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         End:
             resultValue = value;
-            if (!string.IsNullOrEmpty(value) && !string.IsNullOrWhiteSpace(value))
+            if (!string.IsNullOrWhiteSpace(value))
             {
                 rlt = true;
             }
@@ -3046,7 +3045,7 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     tmpValue = GetRuntimeStringFlagA("get printer info...");
                     tmpValue = tmpValue.Replace(PrinterCommands.modules_printer, "");
-                    if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                    if ( !string.IsNullOrWhiteSpace(tmpValue))
                     {
                         bTimeOut = false;
                         break;
@@ -3339,7 +3338,7 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     tmpValue = REGEX.GetString(rtbLog.Text, PrinterCommands.AUDIO, false);
                     tmpValue = tmpValue.Replace(PrinterCommands.AUDIO, "");
-                    if (!string.IsNullOrWhiteSpace(tmpValue) && !string.IsNullOrEmpty(tmpValue))
+                    if (!string.IsNullOrWhiteSpace(tmpValue) )
                     {
                         bTimeOut = false;
                         break;
@@ -3493,8 +3492,7 @@ namespace FCT.ViewLayer.FormLibrary
             item.Value = value;
             return rlt;
         }
-
-
+        
         private bool Test_LssSensor(int index, TestItem item)
         {
             bool rlt = false, bTimeout = true;
@@ -3519,7 +3517,6 @@ namespace FCT.ViewLayer.FormLibrary
             }
             else if (item.Name.Contains("Delta"))
             {
-                //zh_cn = "Media";
                 isDelta = true;
                 lss_test_tpye = "DETLA";
             }
@@ -3617,7 +3614,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 tmpValue = GetRuntimeStringFlagA(item.Name);
                 tmpValue = tmpValue.Replace(PrinterCommands.LSS, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                if (!string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeout = false;
                     break;
@@ -3631,21 +3628,19 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
+            string drive = "", gain = "";
+            dut.get_LSS(tmpValue, ref value, ref drive, ref gain);
 
-            value = GetSensorValue(tmpValue);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                value = "LSS_SENSOR_ADC_VALUE_IS_NULL";
+                rlt = false;
+                goto End;
+            }
 
-            if (item.Name.Contains("No Media"))
-            {
-                LSS_SENSOR_VALUE_NO_MEDIA = Convert.ToDouble(value);
-            }
-            else if (item.Name.Contains("Liner"))
-            {
-                LSS_SENSOR_VALUE_LINER = Convert.ToDouble(value);
-            }
-            else
-            {
-                LSS_SENSOR_VALUE_MEDIA = Convert.ToDouble(value);
-            }
+            if (item.Name.Contains("No Media")) { LSS_SENSOR_VALUE_NO_MEDIA = Convert.ToDouble(value); }
+            else if (item.Name.Contains("Liner")) { LSS_SENSOR_VALUE_LINER = Convert.ToDouble(value); }
+            else { LSS_SENSOR_VALUE_MEDIA = Convert.ToDouble(value); }
 
             if (isDelta)
             {
@@ -3780,13 +3775,12 @@ namespace FCT.ViewLayer.FormLibrary
 
         SendCom:
             SerialPortWriteLineOnce(m_cmd);
-            tmpValue = "";
             bTimeOut = true;
             for (int i = 0; i < 200; i++)
             {
                 tmpValue = GetRuntimeStringFlagA(m_cmd);
 
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                if ( !string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeOut = false;
                     break;
@@ -3801,7 +3795,8 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            value = GetSensorValue(tmpValue);
+            string drive = "", gain = "";
+            dut.get_BM(tmpValue, ref value, ref drive, ref gain);
 
         End:
             item.Value = value;
@@ -4819,7 +4814,7 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     tmpValue = GetRuntimeStringFlagA(PrinterCommands.read_bluetooth_mac_for_bt_only_module);
                     tmpValue = tmpValue.Replace(PrinterCommands.read_bluetooth_mac_for_bt_only_module, "");
-                    if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                    if (!string.IsNullOrWhiteSpace(tmpValue))
                     {
                         bTimeOut = false;
                         break;
@@ -4842,7 +4837,7 @@ namespace FCT.ViewLayer.FormLibrary
                 }
 
                 List<string> values = tmpValue.Split('\n').ToList();
-                values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+                values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
                 foreach (string var in values)
                 {
@@ -4862,7 +4857,7 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     tmpValue = GetRuntimeStringFlagA(PrinterCommands.BLUETOOTH_ID);
                     tmpValue = tmpValue.Replace(PrinterCommands.BLUETOOTH_ID, "");
-                    if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                    if (!string.IsNullOrWhiteSpace(tmpValue))
                     {
                         bTimeOut = false;
                         break;
@@ -4884,12 +4879,12 @@ namespace FCT.ViewLayer.FormLibrary
                     goto End;
                 }
 
-                GetBluetoothId(tmpValue, ref part_number, ref seri_number, ref address);
+                dut.get_BLUETOOTH_ID(tmpValue, ref part_number, ref seri_number, ref address);
             }
 
             AppendRuntimeLog($"detected printer's bluetooth mac is {address}");
 
-            if (string.IsNullOrEmpty(address) || string.IsNullOrWhiteSpace(address))
+            if (string.IsNullOrWhiteSpace(address))
             {
                 value = "MAC_ADDRESS_NULL";
                 rlt = false;
@@ -4904,7 +4899,7 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     string bt_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
 
-                    if (string.IsNullOrEmpty(bt_module_sn) || string.IsNullOrWhiteSpace(bt_module_sn))
+                    if (string.IsNullOrWhiteSpace(bt_module_sn))
                     {
                         value = "CANNOT_GET_WIFI_SN_FROM_SFC";
                         rlt = false;
@@ -4921,7 +4916,7 @@ namespace FCT.ViewLayer.FormLibrary
                     string bt_wifi_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114390_BT_Wifi_board");
                     AppendRuntimeLog($"{MainBarcode} get sfc wifi module SN is {bt_wifi_module_sn}.");
 
-                    if (string.IsNullOrEmpty(bt_wifi_module_sn) || string.IsNullOrWhiteSpace(bt_wifi_module_sn))
+                    if (string.IsNullOrWhiteSpace(bt_wifi_module_sn))
                     {
                         value = "CANNOT_GET_WIFI_SN_FROM_SFC";
                         rlt = false;
@@ -6163,7 +6158,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 200; i++)
             {
                 devicePortName = WinDevice.GetSerialportComPort(m_dut.VID, m_dut.PID);
-                if (devicePortName != "COM1" && !string.IsNullOrEmpty(devicePortName) && !string.IsNullOrWhiteSpace(devicePortName))
+                if (devicePortName != "COM1" && !string.IsNullOrWhiteSpace(devicePortName))
                 {
                     AppendRuntimeLog($"current times is{i}, detected device: {devicePortName} [vid({m_dut.VID}), pid({m_dut.PID})].");
                     rlt = true;
@@ -6199,7 +6194,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 200; i++)
             {
                 tmpValue = GetRuntimeStringFlagA(m_cmd);
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                if (!string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeOut = false;
                     break;
@@ -6234,7 +6229,7 @@ namespace FCT.ViewLayer.FormLibrary
                 BLUETOOTH_MAC_ADDRESS = value;
             }
 
-            rlt = (!string.IsNullOrWhiteSpace(value) && !string.IsNullOrEmpty(value)) ? true : false;
+            rlt = (!string.IsNullOrWhiteSpace(value)) ? true : false;
 
         End:
             item.Value = value;
@@ -6261,7 +6256,7 @@ namespace FCT.ViewLayer.FormLibrary
 
             LabFilePath = Path.Combine(Global.ASSEMBLY_PATH, "LabFile", LabFile);
 
-            if (string.IsNullOrEmpty(mac) || string.IsNullOrWhiteSpace(mac))
+            if (string.IsNullOrWhiteSpace(mac))
             {
                 value = "MAC_CONTENT_IS_NULL";
                 rlt = false;
@@ -6700,15 +6695,6 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            Prod.LTSSensor m_product = product as Prod.LTSSensor;
-
-            if (m_product == null)
-            {
-                rlt = false;
-                value = "PRODUCT_TPYE_ERROR";
-                goto End;
-            }
-
             Type m_type = dut.GetType();
 
             if (m_type.Name != "LTSSensor")
@@ -6723,9 +6709,7 @@ namespace FCT.ViewLayer.FormLibrary
             for (int i = 0; i < 200; i++)
             {
                 devicePortName = WinDevice.GetSerialportComPort(m_dut.VID, m_dut.PID);
-                if (devicePortName != "COM1" &&
-                    !string.IsNullOrEmpty(devicePortName) &&
-                    !string.IsNullOrWhiteSpace(devicePortName))
+                if (devicePortName != "COM1" && !string.IsNullOrWhiteSpace(devicePortName))
                 {
                     AppendRuntimeLog($"count: {i}, detected device: {devicePortName} [vid({m_dut.VID}), pid({m_dut.PID})].");
 
@@ -6758,15 +6742,21 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false, bTimeOut = true, bFinddevice = false;
             string value = "", devicePortName = "";
-            string val_temp = "";
             string zh_cn = "", en_us = "", thai = "";
 
             DUTS.LTSSensor.LTSSensor m_dut = dut as DUTS.LTSSensor.LTSSensor;
 
+            if (m_dut == null)
+            {
+                value = "DUT_TYPE_ERROR";
+                rlt = false;
+                goto End;
+            }
+
             for (int i = 0; i < 200; i++)
             {
                 devicePortName = WinDevice.GetSerialportComPort(m_dut.VID, m_dut.PID);
-                if (devicePortName != "COM1" && !string.IsNullOrEmpty(devicePortName) && !string.IsNullOrWhiteSpace(devicePortName))
+                if (devicePortName != "COM1" && !string.IsNullOrWhiteSpace(devicePortName))
                 {
                     AppendRuntimeLog($"current times is{i}, detected device: {devicePortName} [vid({m_dut.VID}), pid({m_dut.PID})].");
 
@@ -6807,54 +6797,21 @@ namespace FCT.ViewLayer.FormLibrary
                 thai = "null";
             }
 
-            this.Invoke(new Action(() =>
+            bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            if (!bOpStep)
             {
-                frmTips dialog = new frmTips(zh_cn, en_us, thai);
-                DialogResult result = dialog.ShowDialog(this);
+                value = "OP_PUT_LTS_FAIL";
+                rlt = false;
+                goto End;
+            }
 
-                if (result == DialogResult.OK)
-                {
-                    SerialPortWriteLineOnce(PrinterCommands.LTS);
-                    for (int i = 0; i < 200; i++)
-                    {
-                        val_temp = GetRuntimeStringFlagA(item.Name);
-                        if (!string.IsNullOrEmpty(val_temp) && !string.IsNullOrWhiteSpace(val_temp))
-                        {
-                            bTimeOut = false;
-                            break;
-                        }
+            value = GetLTSSensorValue();
 
-                        Delay(500);
-                    }
-
-                    if (bTimeOut)
-                    {
-                        value = "TimeOut";
-                        rlt = false;
-                    }
-                    else
-                    {
-                        if (val_temp.Contains($"{Printer_Error_Code.HW_NOT_INSTALL}"))
-                        {
-                            value = $"{Printer_Error_Code.HW_NOT_INSTALL}";
-                            rlt = false;
-                        }
-                        else
-                        {
-                            value = GetSensorValue(val_temp);
-                            if (string.IsNullOrEmpty(value) || string.IsNullOrWhiteSpace(value))
-                            {
-                                value = "-1";
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    rlt = false;
-                    value = "FAIL";
-                }
-            }));
+            if (value.Contains($"{Printer_Error_Code.HW_NOT_INSTALL}"))
+            {
+                rlt = false;
+            }
 
         End:
             item.Value = value;
@@ -9057,7 +9014,7 @@ namespace FCT.ViewLayer.FormLibrary
                 tmpValue = GetRuntimeStringFlagA(m_tag);
                 tmpValue = tmpValue.Replace(PrinterCommands.get_media_type, "");
                 tmpValue = tmpValue.Replace(PrinterCommands.get_media_type_value, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                if (!string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeOut = false;
                     break;
@@ -9091,7 +9048,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 tmpValue = GetRuntimeStringFlagA(m_tag);
                 tmpValue = tmpValue.Replace(PrinterCommands.LTS, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrEmpty(tmpValue))
+                if (!string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeOut = false;
                     break;
@@ -9105,47 +9062,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            value = GetSensorValue(tmpValue);
-        End:
-            return value;
-        }
-
-        private string GetHEAD_LIFT_SENSOR()
-        {
-            string value = "", tmpValue = "";
-            bool bTimeOut = true;
-
-            DUTS.PA45.PA45 dut_PA45 = dut as DUTS.PA45.PA45;
-
-            if (dut_PA45 == null)
+            if (tmpValue.Contains($"{Printer_Error_Code.HW_NOT_INSTALL}"))
             {
-                value = "PRODUCT_TYPE_ERROR";
+                value = $"{Printer_Error_Code.HW_NOT_INSTALL}";
                 goto End;
             }
 
-            string m_tag = Guid.NewGuid().ToString("N");
-            AppendRuntimeLog(m_tag);
-
-            SerialPortWriteLineOnce(PrinterCommands.HEAD_LIFT_SENSOR);
-            for (int i = 0; i < 60; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(m_tag);
-                tmpValue = tmpValue.Replace(PrinterCommands.HEAD_LIFT_SENSOR, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
-            }
-
-            if (bTimeOut)
-            {
-                value = "TimeOut";
-                goto End;
-            }
-
-
+            dut.get_LTS(tmpValue, ref value);
 
         End:
             return value;
@@ -9187,30 +9110,11 @@ namespace FCT.ViewLayer.FormLibrary
             return mac;
         }
 
-
-        private string GetSensorValue(string text)
-        {
-            string value = "";
-            List<string> values = text.Split('\n').ToList();
-            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
-
-            foreach (string v in values)
-            {
-                if (v.Contains("Sensor Value:"))
-                {
-                    value = v.Replace("Sensor Value:", "").Trim();
-                    break;
-                }
-            }
-            return value;
-        }
-
-
         private string GetDHCP_IP_Address(string text)
         {
             string value = "";
             List<string> values = text.Split('\n').ToList();
-            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+            values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
             foreach (string v in values)
             {
@@ -9316,20 +9220,6 @@ namespace FCT.ViewLayer.FormLibrary
 
             foreach (string v in values) { foreach (string key in dict.Keys) { if (v.Contains(key)) { dict[key] = v.Replace(key, "").Trim(); } } }
         }
-
-        private void GetBluetoothId(string text, ref string pn, ref string sn, ref string addr)
-        {
-            string[] lines = text.Split('\n');
-
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (lines[i].Contains("Part Number:")) pn = lines[i].Replace("Part Number:", "").Trim();
-                if (lines[i].Contains("Serial Number:")) sn = lines[i].Replace("Serial Number:", "").Trim();
-                if (lines[i].Contains("BD Address:")) addr = lines[i].Replace("BD Address:", "").Trim();
-            }
-        }
-
-
 
         private void GetLabelLength(string text, ref string labelLen)
         {
