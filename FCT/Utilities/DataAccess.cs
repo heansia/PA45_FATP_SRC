@@ -25,6 +25,10 @@ namespace FCT.Utilities
         {
             string folder = Global.ASSEMBLY_PATH + @"\" + "CsvLog";
 
+            Type m_type = dut.GetType();
+
+            folder = folder + @"\" + m_type.ToString();
+
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
             folder = folder + @"\" + dut.SerialNumber;
@@ -71,6 +75,65 @@ namespace FCT.Utilities
             }
 
         }
+
+        public static void SaveCsvLogByDay(IDUT dut, string mbPartNumber)
+        {
+            string folder = Global.ASSEMBLY_PATH + @"\" + "CsvLog";
+
+            Type m_type = dut.GetType();
+
+            folder = folder + @"\" + m_type.ToString();
+
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+            folder = folder + @"\" + DateTime.Now.ToString("yyyy-MM");
+
+            folder = folder + @"\" + DateTime.Now.Day.ToString();
+
+            if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+            string file = folder + @"\" + DateTime.Now.ToString("yyyy_MM_dd") + ".csv";
+
+            bool isHeaderThere = File.Exists(file);
+
+            using (StreamWriter sw = new StreamWriter(file, true))
+            {
+                StringBuilder sb = new StringBuilder();
+                if (!isHeaderThere)
+                {
+                    string header = "Barcode" + "," + "PART_NUMBER" + "," + "TestTime" + ",";
+                    for (int i = 0; i < dut.TestItems.Count(); i++)
+                    {
+                        header = header + dut.TestItems[i].Name + ",";
+                    }
+                    sb.AppendLine(header);
+
+                    string value = dut.SerialNumber + "," + mbPartNumber + "," + DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + ",";
+
+                    for (int i = 0; i < dut.TestItems.Count(); i++)
+                    {
+                        value = value + dut.TestItems[i].Value.Replace("\r\n", "").Replace("\n", "").Replace("\r", "") + ",";
+                    }
+                    sb.AppendLine(value);
+                }
+                else
+                {
+                    string value = dut.SerialNumber + "," + mbPartNumber + "," + DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss") + ",";
+
+                    for (int i = 0; i < dut.TestItems.Count(); i++)
+                    {
+                        value = value + dut.TestItems[i].Value.Replace("\r\n", "").Replace("\n", "").Replace("\r", "") + ",";
+                    }
+                    sb.AppendLine(value);
+                }
+
+                sw.Write(sb);
+
+            }
+
+        }
+
+
 
         public static void SaveTxtLog(IDUT dut, RichTextBox rtbLog, RichTextBox rtbUSB, RichTextBox rtbSerialport)
         {

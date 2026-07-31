@@ -130,8 +130,6 @@
     <Compile Include="Models\DUT\LTSSensor\LTSSensor.cs" />
     <Compile Include="Models\DUT\PA45\argumentsAttribute.cs" />
     <Compile Include="Models\DUT\PA45\Media_Type.cs" />
-    <Compile Include="Models\DUT\PA45\Media_Type_Ext.cs" />
-    <Compile Include="Models\DUT\PA45\PA45_Ext.cs" />
     <Compile Include="Models\DUT\PA45\Printer_Error_Code.cs" />
     <Compile Include="Models\DUT\PA45\testlabel_list.cs" />
     <Compile Include="Models\DUT\PA45_KeyBoard\PA45_KeyBoard.cs" />
@@ -146,6 +144,7 @@
     <Compile Include="Models\DUT\QBC\QBC.cs" />
     <Compile Include="Models\DUT\TopSensor\TopSensor.cs" />
     <Compile Include="Models\DUT\USB2ETH\USB2ETH.cs" />
+    <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module_Ext.cs" />
     <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module.cs" />
     <Compile Include="Models\Test_Proc_Error_Code.cs" />
     <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard1.cs" />
@@ -188,6 +187,7 @@
     <Compile Include="Models\Instrument\RelayCard\SSGRelayCard2.cs" />
     <Compile Include="Models\TestItem.cs" />
     <Compile Include="Models\TestStatusListener.cs" />
+    <Compile Include="Service\DUT.Service\HON_Printer_Log_Parser.cs" />
     <Compile Include="Utilities\CsvHelper.cs" />
     <Compile Include="Utilities\DataAccess.cs" />
     <Compile Include="Utilities\ICardHelper.cs" />
@@ -357,7 +357,10 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Extension\" />
+    <Folder Include="Service\SFCS.Service\" />
+  </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
       <Visible>False</Visible>

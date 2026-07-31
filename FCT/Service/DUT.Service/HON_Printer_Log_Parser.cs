@@ -3,29 +3,89 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FCT.Models.DUT.Interface;
+using FCT.Models.DUT.PA45;
+using FCT.Models.DUT.PA45_MainBoard;
+using FCT.Models.DUT.LTSSensor;
+using FCT.Models.DUT.BT_Module;
+using FCT.Models.DUT.WiFi_BT_Module;
 
-namespace FCT.Models.DUT.PA45
+
+
+namespace FCT.Service.DUT.Service
 {
-    public static class PA45_Ext
+    public static class HON_Printer_Log_Parser
     {
-        public static void get_HEAD_LIFT_SENSOR(this PA45 m_PA45, string text, ref string sensorVal)
+        public static string get_Media_Type(this Media_Type mediaType)
         {
+            string m_MediaType = string.Empty;
+            switch (mediaType)
+            {
+                case Media_Type.Gaps:
+                    m_MediaType = "Gaps";
+                    break;
+
+                case Media_Type.BlackMark:
+                    m_MediaType = "Black Mark";
+                    break;
+
+                case Media_Type.ContinuousVarLen:
+                    m_MediaType = "Continuous Var Len";
+                    break;
+            }
+            return m_MediaType;
+        }
+
+        public static void get_HEAD_LIFT_SENSOR(this IDUT m_dut, string text, ref string sensorVal)
+        {
+            string name = m_dut.GetType().Name;
+
+            if (name != "PA45" && name != "PA45_MainBoard")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
-            foreach (string v in values) { if (v.Contains("Print head")) { sensorVal = v.Replace("Print head", "").Trim(); } }
+            foreach (string v in values)
+            {
+                if (v.Contains("Print head"))
+                {
+                    sensorVal = v.Replace("Print head", "").Trim();
+                }
+            }
         }
 
-        public static void get_LTS(this PA45 m_PA45, string text, ref string sensorVal)
+        public static void get_LTS(this IDUT m_dut, string text, ref string sensorVal)
         {
+            string name = m_dut.GetType().Name;
+
+            if (name != "PA45" && name != "PA45_MainBoard" && name != "LTSSensor")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
-            foreach (string v in values) { if (v.Contains("Sensor Value:")) { sensorVal = v.Replace("Sensor Value:", "").Trim(); } }
+            foreach (string v in values)
+            {
+                if (v.Contains("Sensor Value:"))
+                {
+                    sensorVal = v.Replace("Sensor Value:", "").Trim();
+                }
+            }
         }
 
-        public static void get_BM(this PA45 m_PA45, string text, ref string sensorVal, ref string drive, ref string gain)
+        public static void get_BM(this IDUT m_dut, string text, ref string sensorVal, ref string drive, ref string gain)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45" && name != "PA45_MainBoard")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -37,8 +97,14 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_LSS(this PA45 m_PA45, string text, ref string sensorVal, ref string drive, ref string gain)
+        public static void get_LSS(this IDUT m_dut, string text, ref string sensorVal, ref string drive, ref string gain)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45" && name != "PA45_MainBoard")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -50,8 +116,14 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_TPH_ID(this PA45 m_PA45, string text, ref string part, ref string seri)
+        public static void get_TPH_ID(this IDUT m_dut, string text, ref string part, ref string seri)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -62,8 +134,15 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_BLUETOOTH_ID(this PA45 m_PA45, string text, ref string part, ref string seri, ref string db)
+        public static void get_BLUETOOTH_ID(this IDUT m_dut, string text, ref string part, ref string seri, ref string db)
         {
+
+            string name = m_dut.GetType().Name;
+            if (name != "PA45" && name != "WiFi_BT_Module")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -75,8 +154,14 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_WIFI_ID(this PA45 m_PA45, string text, ref string part, ref string seri, ref string mac)
+        public static void get_WIFI_ID(this IDUT m_dut, string text, ref string part, ref string seri, ref string mac)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45" && name != "WiFi_BT_Module")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -88,8 +173,15 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_BATTERY_TEST(this PA45 m_PA45, string text, ref string status, ref string externalPower, ref string remaining, ref string health, ref string current)
+        public static void get_BATTERY_TEST(this IDUT m_dut, string text, ref string status, ref string externalPower, ref string remaining, ref string health, ref string current)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -103,13 +195,19 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_printer_sensor(this PA45 m_PA45, string text)
+        public static void get_printer_sensor(this IDUT m_dut, string text)
         {
 
         }
-        
-        public static void get_modules_printer(this PA45 m_PA45, string text, ref string part, ref string seri, ref string radio, ref string region)
+
+        public static void get_modules_printer(this IDUT m_dut, string text, ref string part, ref string seri, ref string radio, ref string region)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -122,8 +220,14 @@ namespace FCT.Models.DUT.PA45
             }
         }
 
-        public static void get_modules_cpu(this PA45 m_PA45, string text, ref string part, ref string seri, ref string mech)
+        public static void get_modules_cpu(this IDUT m_dut, string text, ref string part, ref string seri, ref string mech)
         {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 

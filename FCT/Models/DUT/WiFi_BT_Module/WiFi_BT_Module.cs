@@ -7,7 +7,7 @@ using FCT.Models.Products.Interface;
 
 namespace FCT.Models.DUT.WiFi_BT_Module
 {
-    class WiFi_BT_Module : DUT
+    public class WiFi_BT_Module : DUT
     {
         public WiFi_BT_Module(IProduct product) : base(product) { Product = product; }
 
@@ -16,5 +16,5 @@ namespace FCT.Models.DUT.WiFi_BT_Module
         public override string VID { get { return "0C2E"; } }
         public override string PID { get { return "FE32"; } }
     }
-
+    
 }
