@@ -3350,9 +3350,9 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (tmpValue.Contains(Test_Proc_Error_Code.HW_NOT_INSTALL.ToString()))
+            if (tmpValue.Contains(Printer_Error_Code.HW_NOT_INSTALL.ToString()))
             {
-                value = $"{Test_Proc_Error_Code.HW_NOT_INSTALL}";
+                value = $"{Printer_Error_Code.HW_NOT_INSTALL}";
                 rlt = false;
                 goto End;
             }
@@ -6216,10 +6216,10 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (tmpValue.Contains(Test_Proc_Error_Code.HW_NOT_INSTALL.ToString()))
+            if (tmpValue.Contains(Printer_Error_Code.HW_NOT_INSTALL.ToString()))
             {
                 rlt = false;
-                value = $"{Test_Proc_Error_Code.HW_NOT_INSTALL}";
+                value = $"{Printer_Error_Code.HW_NOT_INSTALL}";
                 goto End;
             }
 
@@ -6836,9 +6836,9 @@ namespace FCT.ViewLayer.FormLibrary
                     }
                     else
                     {
-                        if (val_temp.Contains(Test_Proc_Error_Code.HW_NOT_INSTALL.ToString()))
+                        if (val_temp.Contains($"{Printer_Error_Code.HW_NOT_INSTALL}"))
                         {
-                            value = $"{Test_Proc_Error_Code.HW_NOT_INSTALL}";
+                            value = $"{Printer_Error_Code.HW_NOT_INSTALL}";
                             rlt = false;
                         }
                         else

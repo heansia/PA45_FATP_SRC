@@ -10,6 +10,7 @@ namespace FCT.Models.DUT.PA45
     {
         INVALID_ARGUMENT,
         HW_NOT_INSTALLED,
+        HW_NOT_INSTALL,
         NOT_AVAILABLE
     }
 }
