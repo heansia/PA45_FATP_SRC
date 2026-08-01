@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FCT.Utilities
 {
-    static class IniFileHelper
+    static class INI_Parser
     {
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string defVal, StringBuilder retVal, int size, string filePath);

@@ -56,7 +56,7 @@ using Prod = FCT.Models.Products;
 using USB = FCT.Utilities.USBHelper;
 using SMT_SFC = FCT.Utilities.SMT_SFCSHelper;
 using SSG_SFC = FCT.Utilities.SFCSHelper;
-using INI = FCT.Utilities.IniFileHelper;
+using INI = FCT.Utilities.INI_Parser;
 using RELAY = FCT.Utilities.RelayHelper;
 using PRINTER = FCT.Utilities.LabelPrintHelper;
 using REGEX = FCT.Utilities.RegexHelper;
@@ -2624,7 +2624,7 @@ namespace FCT.ViewLayer.FormLibrary
                 }
                 else
                 {
-                    value = $"{address.ToUpper()} / {input_wifi_mac.ToUpper()} / {m_sfc_address.ToUpper()}";
+                    value = $"MAC_DISMATCH({address.ToUpper()} / {input_wifi_mac.ToUpper()} / {m_sfc_address.ToUpper()})";
                 }
             }
             else

@@ -142,8 +142,7 @@ namespace FCT.Utilities
         //读设备存储区2
         [DllImport("OUR_MIFARE.dll", EntryPoint = "pcdgetcustomizedata2", CallingConvention = CallingConvention.StdCall)]
         public static extern byte pcdgetcustomizedata2(byte[] readerdata, byte[] devno);//devicenumber用于传递写数据 
-
-
+        
         public static string ReadNFCTag(int sectorIndex)
         {
             string value = string.Empty;
@@ -262,8 +261,7 @@ namespace FCT.Utilities
 
             return value;
         }
-
-
+        
         public static readonly byte[] Key_Default = new byte[6] { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
         public static readonly byte[] Key_A = new byte[6] { 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5 };
         public static readonly byte[] Key_B = new byte[6] { 0xd3, 0xf7, 0xd3, 0xf7, 0xd3, 0xf7 };

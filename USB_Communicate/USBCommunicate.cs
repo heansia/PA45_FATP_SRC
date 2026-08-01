@@ -9,15 +9,5 @@ namespace USB_Communicate
     public class USBCommunicate
     {
 
-
-
-
-
-
-
-
-
-
-
     }
 }

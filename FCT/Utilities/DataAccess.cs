@@ -82,7 +82,7 @@ namespace FCT.Utilities
 
             Type m_type = dut.GetType();
 
-            folder = folder + @"\" + m_type.ToString();
+            folder = folder + @"\" + m_type.Name;
 
             if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
@@ -128,13 +128,10 @@ namespace FCT.Utilities
                 }
 
                 sw.Write(sb);
-
             }
 
         }
-
-
-
+        
         public static void SaveTxtLog(IDUT dut, RichTextBox rtbLog, RichTextBox rtbUSB, RichTextBox rtbSerialport)
         {
             string folder = Application.StartupPath + @"\" + "TxtLog";

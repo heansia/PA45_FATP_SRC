@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using FCT.Models;
-using INI = FCT.Utilities.IniFileHelper;
+using INI = FCT.Utilities.INI_Parser;
 
 namespace FCT.ViewLayer.FormLibrary
 {

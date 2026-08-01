@@ -7,7 +7,7 @@
     <ProjectGuid>{0C20922C-D44F-4C65-884E-1E1C63F85E94}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>FCT</RootNamespace>
-    <AssemblyName>Nomad_ATE</AssemblyName>
+    <AssemblyName>PA45 series test tool</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -193,7 +193,7 @@
     <Compile Include="Utilities\CsvHelper.cs" />
     <Compile Include="Utilities\DataAccess.cs" />
     <Compile Include="Utilities\ICardHelper.cs" />
-    <Compile Include="Utilities\IniFileHelper.cs" />
+    <Compile Include="Utilities\INI_Parser.cs" />
     <Compile Include="Utilities\JsonHelpler.cs" />
     <Compile Include="Utilities\LabelPrintHelper.cs" />
     <Compile Include="Utilities\ProcessHelper.cs" />

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using FCT.Models.DUT.Interface;
 using FCT.Models.Products.Interface;
-using INI = FCT.Utilities.IniFileHelper;
+using INI = FCT.Utilities.INI_Parser;
 
 namespace FCT.Models.DUT
 {

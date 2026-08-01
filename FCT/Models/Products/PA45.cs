@@ -18,14 +18,8 @@ namespace FCT.Models.Products
                 string m_str = HON_PN.Substring(4, 1).ToUpper();
 
                 Version _version = Version.Unknown;
-                if (m_str == "S")
-                {
-                    _version = Version.Small;
-                }
-                else if (m_str == "L")
-                {
-                    _version = Version.Large;
-                }
+                if (m_str == "S") { _version = Version.Small; }
+                if (m_str == "L") { _version = Version.Large; }
 
                 string msg = string.Format($"detected Version is {_version}.");
                 OnRunTimeLogUpdated(msg);
@@ -48,7 +42,7 @@ namespace FCT.Models.Products
 
                 string msg = string.Format($"detected SKU is {_sku}.");
                 OnRunTimeLogUpdated(msg);
-             
+
                 return _sku;
             }
         }
@@ -82,24 +76,10 @@ namespace FCT.Models.Products
                     goto End;
                 }
 
-                if (RegionalCode.ToString().ToUpper().Contains("ROW"))
-                {
-                    _regionalCodeStr = RegionalCodeFlag.ROW;
-                }
-                else if (RegionalCode.ToString().ToUpper().Contains("US"))
-                {
-                    _regionalCodeStr = RegionalCodeFlag.US;
-                }
-                else if (RegionalCode.ToString().ToUpper().Contains("EU"))
-                {
-                    _regionalCodeStr = RegionalCodeFlag.EU;
-                }
-                else
-                {
-                    _regionalCodeStr = RegionalCodeFlag.ROW;
-                }
-
-
+                if (RegionalCode.ToString().ToUpper().Contains("ROW")) { _regionalCodeStr = RegionalCodeFlag.ROW; }
+                else if (RegionalCode.ToString().ToUpper().Contains("US")) { _regionalCodeStr = RegionalCodeFlag.US; }
+                else if (RegionalCode.ToString().ToUpper().Contains("EU")) { _regionalCodeStr = RegionalCodeFlag.EU; }
+                else { _regionalCodeStr = RegionalCodeFlag.ROW; }
 
             End:
                 string msg = string.Format($"detected Regional Code is {_regionalCodeStr}.");
@@ -140,53 +120,53 @@ namespace FCT.Models.Products
                     _communicationOption = CommunicationOptions.USB_only;
                     str_flag = "USB only";
                 }
-                else if (m_str == "B1")
+                if (m_str == "B1")
                 {
                     //B1 = BT Only
                     _communicationOption = CommunicationOptions.BT_only;
                     str_flag = "BT Only";
                 }
-                else if (m_str == "D1")
+                if (m_str == "D1")
                 {
                     //D1 = BT & Wi-Fi US
                     _communicationOption = CommunicationOptions.BT_WifiUS;
                     str_flag = "BT & Wi-Fi US";
                 }
-                else if (m_str == "D2")
+                if (m_str == "D2")
                 {
                     //D2 = BT & Wi-Fi ROW
                     _communicationOption = CommunicationOptions.BT_WifiROW;
                     str_flag = "BT & Wi-Fi ROW";
                 }
-                else if (m_str == "E1")
+                if (m_str == "E1")
                 {
                     //E1 = BT & Wi-Fi US & WWAN US
                     _communicationOption = CommunicationOptions.BT_WifiUS_WwanUS;
                     str_flag = "BT & Wi-Fi US & WWAN US";
                 }
-                else if (m_str == "E2")
+                if (m_str == "E2")
                 {
                     //E2 = BT & Wi-Fi ROW & WWAN EU
                     _communicationOption = CommunicationOptions.BT_WifiROW_WwanEU;
                     str_flag = "BT & Wi-Fi ROW & WWAN EU";
                 }
-                else if (m_str == "Ex")
+                if (m_str == "Ex")
                 {
                     //Ex = BT & Wi-Fi ROW & WWAN ROW
                     _communicationOption = CommunicationOptions.BT_WifiROW_WwanROW;
                     str_flag = "BT & Wi-Fi ROW";
                 }
-                else if (m_str == "F1")
+                if (m_str == "F1")
                 {
                     //F1 = BT & Wi-Fi US & WWAN & RFID US
                     _communicationOption = CommunicationOptions.BT_WifiUS_Wwan_RfidUS;
                 }
-                else if (m_str == "F2")
+                if (m_str == "F2")
                 {
                     //F2 = BT & Wi-Fi ROW & WWAN & RFID EU
                     _communicationOption = CommunicationOptions.USB_only;
                 }
-                else if (m_str == "Fx")
+                if (m_str == "Fx")
                 {
                     //Fx = BT & Wi - Fi & WWAN & RFID ROW(other RFID SKUs to be set based on regional demand)
                     _communicationOption = CommunicationOptions.USB_only;
@@ -210,15 +190,15 @@ namespace FCT.Models.Products
                 {
                     _BatteryOption = BatteryOptions.NoBattery;
                 }
-                else if  (m_str == "1")
+                if (m_str == "1")
                 {
                     _BatteryOption = BatteryOptions.Strandard;
                 }
-                else if (m_str == "2")
+                if (m_str == "2")
                 {
                     _BatteryOption = BatteryOptions.Extended;
                 }
-                else if (m_str == "D")
+                if (m_str == "D")
                 {
                     _BatteryOption = BatteryOptions.DisinfectantReadyHousing;
                 }
@@ -258,7 +238,7 @@ namespace FCT.Models.Products
             if (BatteryOption == BatteryOptions.Unknown) { return false; }
 
             if (RegionalCodeFlag == RegionalCodeFlag.Unknown) { return false; }
-            
+
             return base.CheckBarcodeFormat();
         }
 
@@ -318,7 +298,6 @@ namespace FCT.Models.Products
         Global,
         Mexico,
         China
-
     }
 
     public enum RegionalCodeFlag

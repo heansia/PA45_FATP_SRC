@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using FCT.Models.Products.Interface;
-using INI = FCT.Utilities.IniFileHelper;
+using INI = FCT.Utilities.INI_Parser;
 
 namespace FCT.Models.DUT.PA45
 {
