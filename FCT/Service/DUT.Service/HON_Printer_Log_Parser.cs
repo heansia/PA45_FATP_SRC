@@ -231,5 +231,22 @@ namespace FCT.Service.DUT.Service
             }
         }
 
+
+        public static void get_WIFI_IPADDRESS(this IDUT m_dut, string text, ref string address)
+        {
+            List<string> values = text.Split('\n').ToList();
+            values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
+
+            foreach (string v in values)
+            {
+                if (v.Contains("WIFI IPADDRESS :"))
+                {
+                    address = v.Replace("WIFI IPADDRESS :", "").Trim();
+                    break;
+                }
+            }
+        }
+
+
     }
 }

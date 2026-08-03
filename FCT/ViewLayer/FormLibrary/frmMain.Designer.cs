@@ -1075,7 +1075,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.toolStripStatusLabel1.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(412, 28);
-            this.toolStripStatusLabel1.Text = "primax f21 ate, Nomad, DVT, v1.4.8, 2026/07/31";
+            this.toolStripStatusLabel1.Text = "primax f21 ate, Nomad, DVT, v1.4.9, 2026/08/03";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // slblPortName

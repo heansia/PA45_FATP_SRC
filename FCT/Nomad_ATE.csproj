@@ -147,6 +147,7 @@
     <Compile Include="Models\DUT\USB2ETH\USB2ETH.cs" />
     <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module_Ext.cs" />
     <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module.cs" />
+    <Compile Include="Models\Products\LowSensor.cs" />
     <Compile Include="Models\Test_Proc_Error_Code.cs" />
     <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard1.cs" />
     <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard2.cs" />
