@@ -319,52 +319,52 @@ namespace FCT.ViewLayer.FormLibrary
             this.serialPortToolStripMenuItem});
             this.testItemSettingToolStripMenuItem.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.testItemSettingToolStripMenuItem.Name = "testItemSettingToolStripMenuItem";
-            this.testItemSettingToolStripMenuItem.Size = new System.Drawing.Size(78, 28);
+            this.testItemSettingToolStripMenuItem.Size = new System.Drawing.Size(80, 28);
             this.testItemSettingToolStripMenuItem.Text = "Setting";
             // 
             // MenuItem_Testitem
             // 
             this.MenuItem_Testitem.Name = "MenuItem_Testitem";
-            this.MenuItem_Testitem.Size = new System.Drawing.Size(219, 28);
+            this.MenuItem_Testitem.Size = new System.Drawing.Size(227, 28);
             this.MenuItem_Testitem.Text = "test item";
             this.MenuItem_Testitem.Click += new System.EventHandler(this.MenuItem_Testitem_Click);
             // 
             // MenuItem_SFCS
             // 
             this.MenuItem_SFCS.Name = "MenuItem_SFCS";
-            this.MenuItem_SFCS.Size = new System.Drawing.Size(219, 28);
+            this.MenuItem_SFCS.Size = new System.Drawing.Size(227, 28);
             this.MenuItem_SFCS.Text = "SFCS";
             this.MenuItem_SFCS.Click += new System.EventHandler(this.MenuItem_SFCS_Click);
             // 
             // MenuItem_Relays
             // 
             this.MenuItem_Relays.Name = "MenuItem_Relays";
-            this.MenuItem_Relays.Size = new System.Drawing.Size(219, 28);
+            this.MenuItem_Relays.Size = new System.Drawing.Size(227, 28);
             this.MenuItem_Relays.Text = "Relay Control";
             this.MenuItem_Relays.Click += new System.EventHandler(this.MenuItem_Relays_Click);
             // 
             // dataBaseToolStripMenuItem
             // 
             this.dataBaseToolStripMenuItem.Name = "dataBaseToolStripMenuItem";
-            this.dataBaseToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
+            this.dataBaseToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
             this.dataBaseToolStripMenuItem.Text = "Data Base";
             // 
             // sFTPToolStripMenuItem
             // 
             this.sFTPToolStripMenuItem.Name = "sFTPToolStripMenuItem";
-            this.sFTPToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
+            this.sFTPToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
             this.sFTPToolStripMenuItem.Text = "SFTP";
             // 
             // barcodeFormatToolStripMenuItem
             // 
             this.barcodeFormatToolStripMenuItem.Name = "barcodeFormatToolStripMenuItem";
-            this.barcodeFormatToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
+            this.barcodeFormatToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
             this.barcodeFormatToolStripMenuItem.Text = "Barcode Format";
             // 
             // serialPortToolStripMenuItem
             // 
             this.serialPortToolStripMenuItem.Name = "serialPortToolStripMenuItem";
-            this.serialPortToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
+            this.serialPortToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
             this.serialPortToolStripMenuItem.Text = "SerialPort";
             this.serialPortToolStripMenuItem.Click += new System.EventHandler(this.serialPortToolStripMenuItem_Click);
             // 
@@ -374,13 +374,13 @@ namespace FCT.ViewLayer.FormLibrary
             this.saveTxtLogFileToolStripMenuItem});
             this.fileToolStripMenuItem.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(51, 28);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(53, 28);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // saveTxtLogFileToolStripMenuItem
             // 
             this.saveTxtLogFileToolStripMenuItem.Name = "saveTxtLogFileToolStripMenuItem";
-            this.saveTxtLogFileToolStripMenuItem.Size = new System.Drawing.Size(221, 28);
+            this.saveTxtLogFileToolStripMenuItem.Size = new System.Drawing.Size(229, 28);
             this.saveTxtLogFileToolStripMenuItem.Text = "Save Txt Log File";
             // 
             // toolToolStripMenuItem
@@ -390,26 +390,26 @@ namespace FCT.ViewLayer.FormLibrary
             this.releaseNoteToolStripMenuItem,
             this.aCCLabelPrintToolStripMenuItem});
             this.toolToolStripMenuItem.Name = "toolToolStripMenuItem";
-            this.toolToolStripMenuItem.Size = new System.Drawing.Size(57, 28);
+            this.toolToolStripMenuItem.Size = new System.Drawing.Size(59, 28);
             this.toolToolStripMenuItem.Text = "Tool";
             // 
             // cPKToolStripMenuItem
             // 
             this.cPKToolStripMenuItem.Name = "cPKToolStripMenuItem";
-            this.cPKToolStripMenuItem.Size = new System.Drawing.Size(214, 28);
+            this.cPKToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
             this.cPKToolStripMenuItem.Text = "CPK";
             // 
             // releaseNoteToolStripMenuItem
             // 
             this.releaseNoteToolStripMenuItem.Name = "releaseNoteToolStripMenuItem";
-            this.releaseNoteToolStripMenuItem.Size = new System.Drawing.Size(214, 28);
+            this.releaseNoteToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
             this.releaseNoteToolStripMenuItem.Text = "Release Note";
             this.releaseNoteToolStripMenuItem.Click += new System.EventHandler(this.releaseNoteToolStripMenuItem_Click);
             // 
             // aCCLabelPrintToolStripMenuItem
             // 
             this.aCCLabelPrintToolStripMenuItem.Name = "aCCLabelPrintToolStripMenuItem";
-            this.aCCLabelPrintToolStripMenuItem.Size = new System.Drawing.Size(214, 28);
+            this.aCCLabelPrintToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
             this.aCCLabelPrintToolStripMenuItem.Text = "ACC Label Print";
             this.aCCLabelPrintToolStripMenuItem.Click += new System.EventHandler(this.aCCLabelPrintToolStripMenuItem_Click);
             // 
@@ -1061,10 +1061,10 @@ namespace FCT.ViewLayer.FormLibrary
             this.toolStripStatusLabel1,
             this.slblPortName,
             this.Status_Label});
-            this.statusStrip1.Location = new System.Drawing.Point(333, 670);
+            this.statusStrip1.Location = new System.Drawing.Point(333, 669);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(799, 33);
+            this.statusStrip1.Size = new System.Drawing.Size(799, 34);
             this.statusStrip1.TabIndex = 4;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -1138,7 +1138,7 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.rtbLog.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(249)))), ((int)(((byte)(244)))));
             this.rtbLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbLog.Font = new System.Drawing.Font("新細明體", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.rtbLog.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rtbLog.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.rtbLog.Location = new System.Drawing.Point(3, 3);
             this.rtbLog.Name = "rtbLog";
@@ -1241,7 +1241,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.panel6.Dock = System.Windows.Forms.DockStyle.Right;
             this.panel6.Location = new System.Drawing.Point(765, 141);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(367, 529);
+            this.panel6.Size = new System.Drawing.Size(367, 528);
             this.panel6.TabIndex = 6;
             // 
             // tableLayoutPanel11
@@ -1256,7 +1256,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel11.RowCount = 2;
             this.tableLayoutPanel11.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel11.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel11.Size = new System.Drawing.Size(367, 529);
+            this.tableLayoutPanel11.Size = new System.Drawing.Size(367, 528);
             this.tableLayoutPanel11.TabIndex = 4;
             // 
             // dgvProductMatrix
@@ -1267,7 +1267,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.dgvProductMatrix.Name = "dgvProductMatrix";
             this.dgvProductMatrix.RowHeadersWidth = 51;
             this.dgvProductMatrix.RowTemplate.Height = 27;
-            this.dgvProductMatrix.Size = new System.Drawing.Size(361, 259);
+            this.dgvProductMatrix.Size = new System.Drawing.Size(361, 258);
             this.dgvProductMatrix.TabIndex = 4;
             // 
             // tableLayoutPanel9
