@@ -12,6 +12,11 @@ namespace FCT.Models.DUT.PA45
 {
     public class PA45 : DUT
     {
+        public static double LSS_SENSOR_VALUE_MEDIA;
+        public static double LSS_SENSOR_VALUE_NO_MEDIA;
+        public static double LSS_SENSOR_VALUE_LINER;
+        public static double LSS_SENSOR_VALUE_DELTA;
+
         //USB\VID_0C2E&PID_0000&MI_00\6&2351AB96&0&0000
 
         public override string VID

@@ -229,6 +229,5 @@ namespace FCT
             Result = result;
         }
     }
-
-
+    
 }

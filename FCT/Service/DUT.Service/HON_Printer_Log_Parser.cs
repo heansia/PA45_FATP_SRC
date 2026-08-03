@@ -128,7 +128,6 @@ namespace FCT.Service.DUT.Service
 
         public static void get_BLUETOOTH_ID(this IDUT m_dut, string text, ref string part, ref string seri, ref string db)
         {
-
             string name = m_dut.GetType().Name;
             if (name != "PA45" && name != "WiFi_BT_Module")
             {
@@ -172,8 +171,7 @@ namespace FCT.Service.DUT.Service
             {
                 throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
             }
-
-
+            
             List<string> values = text.Split('\n').ToList();
             values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
 
@@ -230,6 +228,105 @@ namespace FCT.Service.DUT.Service
                 if (v.Contains("Mech =")) { mech = v.Replace("Mech =", "").Trim(); }
             }
         }
+        
+        public static void get_WIFI_IPADDRESS(this IDUT m_dut, string text, ref string address)
+        {
+            List<string> values = text.Split('\n').ToList();
+            values.RemoveAll(s => string.IsNullOrWhiteSpace(s));
 
+            foreach (string v in values)
+            {
+                if (v.Contains("WIFI IPADDRESS :"))
+                {
+                    address = v.Replace("WIFI IPADDRESS :", "").Trim();
+                    break;
+                }
+            }
+        }
+
+        public static void get_SecureBoot(this IDUT m_dut, string text, ref string bootStatus)
+        {
+            //console=ttymxc0,115200 SecureBoot=Disabled cma=32M root=/dev/mmcblk1p2 rootfstype=ext4 rootwait rw
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+            
+            List<string> values = text.Split(' ').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string var in values)
+            {
+                if (var.Contains("SecureBoot"))
+                {
+                    bootStatus = var.Replace("SecureBoot=", "").Trim();
+                    break;
+                }
+            }
+        }
+
+        public static void get_PRINTHEAD(this IDUT m_dut, string text, ref string ph_DPI)
+        {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
+            List<string> values = text.Split(' ').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string var in values)
+            {
+                if (var.Contains("Print Head DPI:"))
+                {
+                    ph_DPI = var.Replace("Print Head DPI:", "").Trim();
+                    break;
+                }
+            }
+        }
+
+        public static void get_CHARGER(this IDUT m_dut, string text, ref string reg)
+        {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
+            List<string> values = text.Split(' ').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string var in values)
+            {
+                if (var.Contains("REG"))
+                {
+                    reg = var.Replace("REG", "").Trim();
+                    break;
+                }
+            }
+        }
+
+        public static void get_MOTION(this IDUT m_dut, string text, ref string whoIam)
+        {
+            string name = m_dut.GetType().Name;
+            if (name != "PA45")
+            {
+                throw new ArgumentException($"m_dut can't be {name}", nameof(m_dut));
+            }
+
+            List<string> values = text.Split(' ').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string var in values)
+            {
+                if (var.Contains("WHO_AM_I="))
+                {
+                    whoIam = var.Replace("WHO_AM_I=", "").Trim();
+                    break;
+                }
+            }
+        }
     }
 }

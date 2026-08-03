@@ -15,7 +15,7 @@ namespace FCT.Utilities
         public static extern int EX_OpenUSBDevicePrint();
 
         [DllImport("USB_Printer.dll")]
-        public static extern int EX_SetOutputReportPrint(byte[] byte_,int cmd);
+        public static extern int EX_SetOutputReportPrint(byte[] byte_);
 
         [DllImport("USB_Printer.dll")]
         public static extern int EX_GetInputReportPrint(byte[] byte_, int cmd);
@@ -27,8 +27,23 @@ namespace FCT.Utilities
 
         public static event USBDataReceivedEventHanlder USBDataSend;
         
+        public static void SendCommand(string cmdContent)
+        {
+            byte[] data = new byte[64];
+            data = System.Text.Encoding.Default.GetBytes(cmdContent);
+            EX_SetOutputReportPrint(data);
+            
+        }
+
+        public static void OnUSBDataSend()
+        {
+            if (USBDataSend != null)
+            {
+                //this.Invoke(new Action)
+            }
+        }
+
     }
-    
 
     public delegate void USBDataReceivedEventHanlder(object sender, USBDataReceivedEventArgs e);
 
@@ -52,13 +67,11 @@ namespace FCT.Utilities
         public byte[] Buffer { get; }
         public string HexBuffer { get; }
         public string AsciiBuffer { get; }
-
-
+        
         public USBDataSendEventArgs(byte[] buffer)
         {
             if (Buffer == null)
                 Buffer = new byte[64];
         }
-
     }
 }
