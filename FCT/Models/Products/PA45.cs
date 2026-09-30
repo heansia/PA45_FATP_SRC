@@ -1,16 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using FCT.Extension;
 using FCT.Models.Products.Interface;
 
 namespace FCT.Models.Products
 {
     public class PA45 : Product
     {
+        private static readonly Dictionary<string, CommunicationOptions> CommOptionSkuMap;
+
+        static PA45()
+        {
+            CommOptionSkuMap = new Dictionary<string, CommunicationOptions>();
+            CommOptionSkuMap.Add("00", CommunicationOptions._00);
+            CommOptionSkuMap.Add("B1", CommunicationOptions._B1);
+            CommOptionSkuMap.Add("D0", CommunicationOptions._D0);
+            CommOptionSkuMap.Add("E0", CommunicationOptions._E0);
+            CommOptionSkuMap.Add("F1", CommunicationOptions._F1);
+            CommOptionSkuMap.Add("F2", CommunicationOptions._F2);
+            CommOptionSkuMap.Add("FX", CommunicationOptions._FX);
+            CommOptionSkuMap.Add("G1", CommunicationOptions._G1);
+            CommOptionSkuMap.Add("G2", CommunicationOptions._G2);
+        }
+
+        private static CommHWOpt _commHWOpt;
+        public static CommHWOpt CommHWOpt
+        {
+            get
+            {
+                return _commHWOpt;
+            }
+        }
+
         public Version Version
         {
             get
@@ -18,8 +45,15 @@ namespace FCT.Models.Products
                 string m_str = HON_PN.Substring(4, 1).ToUpper();
 
                 Version _version = Version.Unknown;
-                if (m_str == "S") { _version = Version.Small; }
-                if (m_str == "L") { _version = Version.Large; }
+                if (m_str == "S")
+                {
+                    _version = Version.Small;
+                }
+
+                if (m_str == "L")
+                {
+                    _version = Version.Large;
+                }
 
                 string msg = string.Format($"detected Version is {_version}.");
                 OnRunTimeLogUpdated(msg);
@@ -76,10 +110,22 @@ namespace FCT.Models.Products
                     goto End;
                 }
 
-                if (RegionalCode.ToString().ToUpper().Contains("ROW")) { _regionalCodeStr = RegionalCodeFlag.ROW; }
-                else if (RegionalCode.ToString().ToUpper().Contains("US")) { _regionalCodeStr = RegionalCodeFlag.US; }
-                else if (RegionalCode.ToString().ToUpper().Contains("EU")) { _regionalCodeStr = RegionalCodeFlag.EU; }
-                else { _regionalCodeStr = RegionalCodeFlag.ROW; }
+                if (RegionalCode.ToString().ToUpper().Contains("ROW"))
+                {
+                    _regionalCodeStr = RegionalCodeFlag.ROW;
+                }
+                else if (RegionalCode.ToString().ToUpper().Contains("US"))
+                {
+                    _regionalCodeStr = RegionalCodeFlag.US;
+                }
+                else if (RegionalCode.ToString().ToUpper().Contains("EU"))
+                {
+                    _regionalCodeStr = RegionalCodeFlag.EU;
+                }
+                else
+                {
+                    _regionalCodeStr = RegionalCodeFlag.ROW;
+                }
 
             End:
                 string msg = string.Format($"detected Regional Code is {_regionalCodeStr}.");
@@ -111,71 +157,39 @@ namespace FCT.Models.Products
             get
             {
                 string m_str = HON_PN.Substring(9, 2).ToUpper();
-                CommunicationOptions _communicationOption = CommunicationOptions.Unknown;
+                CommunicationOptions commOpt = CommunicationOptions.Unknown;
 
                 string str_flag = "Unknown";
-                if (m_str == "00")
-                {
-                    //00 = USB only
-                    _communicationOption = CommunicationOptions.USB_only;
-                    str_flag = "USB only";
-                }
-                if (m_str == "B1")
-                {
-                    //B1 = BT Only
-                    _communicationOption = CommunicationOptions.BT_only;
-                    str_flag = "BT Only";
-                }
-                if (m_str == "D1")
-                {
-                    //D1 = BT & Wi-Fi US
-                    _communicationOption = CommunicationOptions.BT_WifiUS;
-                    str_flag = "BT & Wi-Fi US";
-                }
-                if (m_str == "D2")
-                {
-                    //D2 = BT & Wi-Fi ROW
-                    _communicationOption = CommunicationOptions.BT_WifiROW;
-                    str_flag = "BT & Wi-Fi ROW";
-                }
-                if (m_str == "E1")
-                {
-                    //E1 = BT & Wi-Fi US & WWAN US
-                    _communicationOption = CommunicationOptions.BT_WifiUS_WwanUS;
-                    str_flag = "BT & Wi-Fi US & WWAN US";
-                }
-                if (m_str == "E2")
-                {
-                    //E2 = BT & Wi-Fi ROW & WWAN EU
-                    _communicationOption = CommunicationOptions.BT_WifiROW_WwanEU;
-                    str_flag = "BT & Wi-Fi ROW & WWAN EU";
-                }
-                if (m_str == "Ex")
-                {
-                    //Ex = BT & Wi-Fi ROW & WWAN ROW
-                    _communicationOption = CommunicationOptions.BT_WifiROW_WwanROW;
-                    str_flag = "BT & Wi-Fi ROW";
-                }
-                if (m_str == "F1")
-                {
-                    //F1 = BT & Wi-Fi US & WWAN & RFID US
-                    _communicationOption = CommunicationOptions.BT_WifiUS_Wwan_RfidUS;
-                }
-                if (m_str == "F2")
-                {
-                    //F2 = BT & Wi-Fi ROW & WWAN & RFID EU
-                    _communicationOption = CommunicationOptions.USB_only;
-                }
-                if (m_str == "Fx")
-                {
-                    //Fx = BT & Wi - Fi & WWAN & RFID ROW(other RFID SKUs to be set based on regional demand)
-                    _communicationOption = CommunicationOptions.USB_only;
-                }
+
+                bool isFound = CommOptionSkuMap.TryGetValue(m_str, out commOpt);
+
+                if (isFound) { str_flag = commOpt.GetDescription(); }
 
 
-                string msg = string.Format($"detected CommunicationOption config is {str_flag} ({_communicationOption}).");
+                if (str_flag.ToLower().Contains("bt") && str_flag.ToLower().Contains("wi-fi") && str_flag.ToLower().Contains("rfid"))
+                {
+                    _commHWOpt = CommHWOpt.WIFI_BLUETOOTH_RFID;
+                }
+                else if (str_flag.ToLower().Contains("bt") && str_flag.ToLower().Contains("wi-fi") && !str_flag.ToLower().Contains("rfid"))
+                {
+                    _commHWOpt = CommHWOpt.WIFI_BLUETOOTH;
+                }
+                else if (str_flag.ToLower().Contains("bt") && str_flag.ToLower().Contains("only") && str_flag.ToLower().Contains("usb"))
+                {
+                    _commHWOpt = CommHWOpt.BLUETOOTH_ONLY;
+                }
+                else if (str_flag.ToLower().Contains("bt") && str_flag.ToLower().Contains("only") && !str_flag.ToLower().Contains("usb"))
+                {
+                    _commHWOpt = CommHWOpt.USB_ONLY;
+                }
+                else
+                {
+                    _commHWOpt = CommHWOpt.ERROR;
+                }
+
+                string msg = string.Format($"detected CommunicationOption config is {str_flag} ({commOpt}).");
                 OnRunTimeLogUpdated(msg);
-                return _communicationOption;
+                return commOpt;
             }
         }
 
@@ -217,6 +231,7 @@ namespace FCT.Models.Products
 
         }
 
+
         public PA45(string sn, IProductConfig productConfig)
             : base(sn, productConfig)
         {
@@ -257,6 +272,7 @@ namespace FCT.Models.Products
             OnRunTimeLogUpdated(msg);
             return rlt;
         }
+
 
     }
 
@@ -331,30 +347,39 @@ namespace FCT.Models.Products
 
     public enum CommunicationOptions
     {
-        /*
-         * 00 = USB only
-         * B1 = BT Only
-         * D1 = BT & Wi-Fi US
-         * D2 = BT & Wi-Fi ROW
-         * E1 = BT & Wi-Fi US & WWAN US.
-         * E2 = BT & Wi-Fi ROW & WWAN EU
-         * Ex = BT & Wi-Fi ROW & WWAN ROW
-         * F1 = BT & Wi-Fi US & WWAN & RFID US
-         * F2 = BT & Wi-Fi ROW & WWAN & RFID EU
-         * Fx = BT & Wi-Fi & WWAN & RFID ROW (other RFID SKUs to be set based on regional demand)
-         */
-
         Unknown,
-        USB_only,
-        BT_only,
-        BT_WifiUS,
-        BT_WifiROW,
-        BT_WifiUS_WwanUS,
-        BT_WifiROW_WwanEU,
-        BT_WifiROW_WwanROW,
-        BT_WifiUS_Wwan_RfidUS,
-        BT_WifiROW_Wwan_RfidEU,
-        BT_Wifi_Wwan_RfidROW
+
+        [Description("USB only")]
+        _00,
+
+        [Description("BT Only without USB-C cable")]
+        _B1,
+
+        [Description("BT & Wi-Fi Global without USB-C cable")]
+        _D0,
+
+        [Description("BT & Wi-Fi Global & WWAN Global without USB-C cable")]
+        _E0,
+
+        [RIFDRegionAttribute(RFID_CC.NA)]
+        [Description("BT & Wi-Fi Global & WWAN & RFID US without USB-C cable")]
+        _F1,
+
+        [RIFDRegionAttribute(RFID_CC.EU)]
+        [Description("BT & Wi-Fi Global & WWAN & RFID EU without USB-C cable")]
+        _F2,
+
+        [Description("BT & Wi-Fi Global WWAN & RFID ROW (other RFID SKUs to be set based on regional demand) without USB-C cable")]
+        _FX,
+
+        [RIFDRegionAttribute(RFID_CC.NA)]
+        [Description("BT & Wi-Fi Global & RFID US")]
+        _G1,
+
+        [RIFDRegionAttribute(RFID_CC.EU)]
+        [Description("BT & Wi-Fi Global & RFID EU")]
+        _G2
+
     }
 
     public enum BatteryOptions
@@ -373,4 +398,102 @@ namespace FCT.Models.Products
         DisinfectantReadyHousing
     }
 
+    public enum RFID_Country_Code
+    {
+        Unknown,
+        NONE,
+        US
+    }
+
+    public enum RFID_Country_Name
+    {
+        Europe = 2,
+        NorthAmerica = 14,
+        Thailand = 19,
+        Malaysia = 28,
+        Vietnam = 32,
+        China = 34,
+        SouthKorea = 38,
+        Taiwan = 16,
+        Australia = 20,
+        NewZealand = 20,
+        Japan = 27,
+        HongKong = 26,
+        Singapore = 30,
+        Indonesia = 33,
+        Philipine = 35
+    }
+
+    public enum RFID_CC
+    {
+        Error,
+
+        [Description("02")]
+        EU,
+
+        [Description("14")]
+        NA,
+
+        [Description("19")]
+        TH,
+
+        [Description("28")]
+        MY,
+
+        [Description("32")]
+        VN,
+
+        [Description("34")]
+        CN,
+
+        [Description("38")]
+        KR,
+
+        [Description("16")]
+        TW,
+
+        [Description("20")]
+        AZ,
+
+        [Description("27")]
+        JP,
+
+        [Description("26")]
+        HK,
+
+        [Description("30")]
+        SG,
+
+        [Description("33")]
+        ID,
+
+        [Description("35")]
+        PH
+    }
+
+    public enum CommHWOpt
+    {
+        ERROR,
+        USB_ONLY,
+        BLUETOOTH_ONLY,
+        WIFI_BLUETOOTH,
+        WIFI_BLUETOOTH_RFID
+    }
+
+
+    // 自定义Attribute，支持绑定RegionCode，还可以保留描述
+    [AttributeUsage(AttributeTargets.Field)]
+    public class RIFDRegionAttribute : Attribute
+    {
+        
+        public RFID_CC CC { get; }
+
+        public RIFDRegionAttribute(RFID_CC cc)
+        {
+            CC = cc;
+        }
+
+    }
 }
+
+

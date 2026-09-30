@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class CsvHelper
     {

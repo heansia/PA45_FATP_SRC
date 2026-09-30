@@ -5,7 +5,7 @@ using System.Management;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class WinDeviceHelper
     {
@@ -221,8 +221,7 @@ namespace FCT.Utilities
             }
             return "";
         }
-
-
+        
         /// <summary>
         /// 设置指定网卡的IP、子网掩码、网关和DNS
         /// </summary>
@@ -287,8 +286,7 @@ namespace FCT.Utilities
                 }
             }
         }
-
-
+        
         /// <summary>
         /// 检查 WMI 方法调用的返回值
         /// </summary>

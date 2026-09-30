@@ -23,6 +23,7 @@ namespace FCT.ViewLayer.FormLibrary
         public frmProductMatrix(DataTable productMatrix)
         {
             InitializeComponent();
+            this.dgvProductMatrix.ReadOnly = true;
             dgvProductMatrix.DataSource = productMatrix;
         }
 
@@ -63,11 +64,7 @@ namespace FCT.ViewLayer.FormLibrary
                 return;
             }
 
-            if (ProductConfig == null)
-            {
-                ProductConfig = new ProductConfig();
-
-            }
+            if (ProductConfig == null) { ProductConfig = new ProductConfig(); }
 
             Type type = ProductConfig.GetType();
             PropertyInfo[] properties = type.GetProperties();

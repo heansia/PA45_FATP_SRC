@@ -12,5 +12,6 @@ namespace FCT.Models.DUT.PA45
         HW_NOT_INSTALLED,
         HW_NOT_INSTALL,
         NOT_AVAILABLE
+        //"rfidWrite failed! Error:File not found"
     }
 }

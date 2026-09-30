@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SFCDLL_CommonEx.Interface;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class SFCSHelper
     {

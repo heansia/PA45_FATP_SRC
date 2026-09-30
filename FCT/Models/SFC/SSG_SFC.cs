@@ -15,7 +15,10 @@ namespace FCT.Models.SFC
         public SSG_SFC()
         {
             if (sfc == null)
+            {
                 sfc = new SFCDLL();
+            }
+                
         }
 
         public string CheckStationPass(string Product, string Station, string Barcode, string LineNo, string Version)

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class RelayHelper
     {

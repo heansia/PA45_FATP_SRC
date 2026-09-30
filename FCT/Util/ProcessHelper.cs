@@ -5,11 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class ProcessHelper
     {
-        public static bool ProcessStart(string fileName, string args, ref string output, ref string error, int outtime)
+        public static bool Process_Start(string fileName, string args, ref string output, ref string error, int outtime)
         {
             bool rlt = false;
 
@@ -61,7 +61,7 @@ namespace FCT.Utilities
             return rlt;
         }
 
-        public static bool CmdStart(string args, ref string output, ref string error, int outtime)
+        public static bool Cmd_Start(string args, ref string output, ref string error, int outtime)
         {
             bool rlt = false;
             using (Process process = new Process())

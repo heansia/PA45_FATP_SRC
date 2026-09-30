@@ -61,8 +61,7 @@ namespace FCT.ViewLayer.ControlLibrary
             base.OnResize(e);
             UpdateRegion();
         }
-
-
+        
         // 更新 Region 为圆形
         private void UpdateRegion()
         {

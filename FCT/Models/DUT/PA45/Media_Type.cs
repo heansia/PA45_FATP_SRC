@@ -8,6 +8,7 @@ namespace FCT.Models.DUT.PA45
 {
     public enum Media_Type
     {
+        Error,
         Gaps,
         BlackMark,
         ContinuousVarLen

@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using FCT.Models;
 using FCT.Models.DUT.Interface;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class DataAccess
     {

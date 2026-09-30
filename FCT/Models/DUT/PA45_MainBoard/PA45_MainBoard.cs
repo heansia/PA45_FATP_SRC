@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FCT.Models.Products.Interface;
-using INI = FCT.Utilities.INI_Parser;
+using INI = FCT.Util.INI_Parser;
 
 namespace FCT.Models.DUT.PA45_MainBoard
 {
@@ -29,6 +29,7 @@ namespace FCT.Models.DUT.PA45_MainBoard
 
             }
         }
+
         public override string PID
         {
             get
@@ -63,6 +64,5 @@ namespace FCT.Models.DUT.PA45_MainBoard
         }
 
     }
-
 
 }

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using FCT.Models;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class USBHelper
     {

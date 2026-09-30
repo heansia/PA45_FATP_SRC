@@ -14,6 +14,7 @@ namespace FCT.Models.DUT.LowSensor
         public override void Test() { if (TestMethod != null) { } }
 
         public override string VID { get { return string.Empty; } }
+
         public override string PID { get { return string.Empty; } }
     }
     

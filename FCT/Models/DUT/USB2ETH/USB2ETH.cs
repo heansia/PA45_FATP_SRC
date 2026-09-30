@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using FCT.Models.Products.Interface;
 
-using INI = FCT.Utilities.INI_Parser;
+using INI = FCT.Util.INI_Parser;
 
 namespace FCT.Models.DUT.USB2ETH
 {

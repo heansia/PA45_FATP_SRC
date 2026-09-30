@@ -23,7 +23,6 @@ namespace FCT.ViewLayer.FormLibrary
 
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent; // 相对于父窗口居中
-            //this.Size = new System.Drawing.Size(626, 626); // 固定大小
             btnOK.Focus();
         }
 

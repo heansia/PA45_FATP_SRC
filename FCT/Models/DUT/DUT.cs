@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 using FCT.Models.DUT.Interface;
 using FCT.Models.Products.Interface;
-using INI = FCT.Utilities.INI_Parser;
+using INI = FCT.Util.INI_Parser;
 
 namespace FCT.Models.DUT
 {
@@ -38,7 +38,7 @@ namespace FCT.Models.DUT
                 TestErrorStatusChanged?.Invoke(this, new TestErrorStatusChangedEventArgs(_errorCode));
             }
         }
-        public bool FinalResult
+        public virtual bool FinalResult
         {
             get
             {

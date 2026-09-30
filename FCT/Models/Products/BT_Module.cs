@@ -55,7 +55,6 @@ namespace FCT.Models.Products
             }
         }
 
-        
         public Model Model
         {
             get
@@ -72,7 +71,6 @@ namespace FCT.Models.Products
             }
         }
 
-
         public override bool CheckBarcodeFormat()
         {
 
@@ -88,5 +86,12 @@ namespace FCT.Models.Products
 
             return true;
         }
+
+        public const string PartName = "910100114400_BT_board";
+
+        public const string Dongguan_SFC_MAC_Resource = "AMFIS16S00000056";
+
+        public const string Thailand_SFC_MAC_Resource = "";
     }
+    
 }

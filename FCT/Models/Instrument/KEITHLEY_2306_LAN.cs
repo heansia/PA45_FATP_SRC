@@ -66,7 +66,12 @@ namespace FCT.Models.Instrument
         {
             try
             {
-                on_runtime_log_update("pc is connecting to KEITHLEY 2306-LAN...");
+                if (_isConnected)
+                {
+                    return;
+                }
+
+                on_runtime_log_update("pc is ready to connect to KEITHLEY 2306-LAN...");
                 _tcpClient.Connect(IP_Address, Port);
                 _tcpClient.ReceiveTimeout = 3000; // 设置读取超时 5秒
                 _tcpClient.SendTimeout = 3000;
@@ -86,9 +91,33 @@ namespace FCT.Models.Instrument
 
         }
 
-        public void Source(double voltage, int channelIndex)
+        public void Source(Electrical_Signal_Type type, KEITHLEY_2306_Channel chIndex, double value)
         {
+            //"SOUR2:CURR 3.0"
+            /*
+            SendCommand(stream, "SOUR1:CURR 3.0");//SOUR2:CURR 3.0
+            SendCommand(stream, "SOUR1:VOLT 7.4");
+            SendCommand(stream, "OUTP1 ON");
+            */
 
+            string sCmd = $"SOUR{Convert.ToInt32(chIndex)}:{type} {value.ToString("F2")}";
+            SendCommand(_networkStream, sCmd);
+
+            sCmd = $"OUTP{Convert.ToInt32(chIndex)} ON";
+            SendCommand(_networkStream, sCmd);
+        }
+
+        public void SourceOff( KEITHLEY_2306_Channel chIndex)
+        {
+            //"SOUR2:CURR 3.0"
+            /*
+            SendCommand(stream, "SOUR1:CURR 3.0");//SOUR2:CURR 3.0
+            SendCommand(stream, "SOUR1:VOLT 7.4");
+            SendCommand(stream, "OUTP1 ON");
+            */
+
+            string sCmd = $"OUTP{Convert.ToInt32(chIndex)} OFF";
+            SendCommand(_networkStream, sCmd);
         }
 
         public string GetDeviceName()
@@ -109,16 +138,24 @@ namespace FCT.Models.Instrument
             return Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
         }
 
-        public void Measure(MeasureType type, int channelIndex)
+        public string Measure(Electrical_Signal_Type type, KEITHLEY_2306_Channel chIndex)
         {
-            if (type == MeasureType.Current)
-            {
+            byte[] buff = new byte[256];
+            SendCommand(_networkStream, $"INST:SEL {chIndex}");
+            string sCmd = $"MEAS:{type}?";
+            SendCommand(_networkStream, sCmd);
+            int bytesRead = _networkStream.Read(buff, 0, buff.Length);
+            return Encoding.ASCII.GetString(buff, 0, bytesRead).Trim();
+        }
 
-            }
-            if (type == MeasureType.Voltage)
-            {
-
-            }
+        public string Measure_scpi(Electrical_Signal_Type type, KEITHLEY_2306_Channel chIndex)
+        {
+            byte[] buff = new byte[256];
+            //SendCommand(_networkStream, $"INST:SEL {chIndex}");
+            string sCmd = $"MEAS{(int)chIndex}:{type}?";
+            SendCommand(_networkStream, sCmd);
+            int bytesRead = _networkStream.Read(buff, 0, buff.Length);
+            return Encoding.ASCII.GetString(buff, 0, bytesRead).Trim();
         }
 
         // 封装一个发送指令的辅助方法（不需要返回值的指令）
@@ -144,9 +181,15 @@ namespace FCT.Models.Instrument
         }
     }
 
-    enum MeasureType
+    enum Electrical_Signal_Type
     {
-        Voltage,
-        Current
+        CURR,
+        VOLT
+    }
+
+    enum KEITHLEY_2306_Channel
+    {
+        CH1 = 1,
+        CH2 = 2
     }
 }

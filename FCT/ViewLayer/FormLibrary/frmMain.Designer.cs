@@ -83,6 +83,8 @@ namespace FCT.ViewLayer.FormLibrary
             this.cPKToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.releaseNoteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aCCLabelPrintToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.sFCGetSpecialValueToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.lblResultWin = new System.Windows.Forms.Label();
             this.tableLayoutPanel14 = new System.Windows.Forms.TableLayoutPanel();
             this.lblModel = new System.Windows.Forms.Label();
             this.lblStation = new System.Windows.Forms.Label();
@@ -102,7 +104,6 @@ namespace FCT.ViewLayer.FormLibrary
             this.lblDuration = new System.Windows.Forms.Label();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanel7 = new System.Windows.Forms.TableLayoutPanel();
-            this.lblResult = new System.Windows.Forms.Label();
             this.lblErrorCode = new System.Windows.Forms.Label();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.tabControl2 = new System.Windows.Forms.TabControl();
@@ -114,7 +115,6 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel13 = new System.Windows.Forms.TableLayoutPanel();
             this.checkBox2 = new System.Windows.Forms.CheckBox();
             this.ckbFailStop = new System.Windows.Forms.CheckBox();
-            this.ckbIsPrintLog = new System.Windows.Forms.CheckBox();
             this.tabPage7 = new System.Windows.Forms.TabPage();
             this.tableLayoutPanel17 = new System.Windows.Forms.TableLayoutPanel();
             this.btn2306 = new System.Windows.Forms.Button();
@@ -153,7 +153,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.dgvProductMatrix = new System.Windows.Forms.DataGridView();
             this.tableLayoutPanel9 = new System.Windows.Forms.TableLayoutPanel();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-            this.spDutDebugPort = new System.IO.Ports.SerialPort(this.components);
+            this.spUART = new System.IO.Ports.SerialPort(this.components);
             this.pb_test_thread = new System.Windows.Forms.ProgressBar();
             this.panel1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
@@ -211,13 +211,14 @@ namespace FCT.ViewLayer.FormLibrary
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(1132, 141);
+            this.panel1.Size = new System.Drawing.Size(1132, 123);
             this.panel1.TabIndex = 0;
+            this.panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.panel1_Paint);
             // 
             // button1
             // 
             this.button1.BackColor = System.Drawing.Color.Maroon;
-            this.button1.Location = new System.Drawing.Point(217, 53);
+            this.button1.Location = new System.Drawing.Point(222, 53);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(99, 39);
             this.button1.TabIndex = 40;
@@ -232,21 +233,21 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel2.Controls.Add(this.pictureBox2, 0, 1);
             this.tableLayoutPanel2.Controls.Add(this.pictureBox3, 0, 0);
-            this.tableLayoutPanel2.Location = new System.Drawing.Point(12, 35);
+            this.tableLayoutPanel2.Location = new System.Drawing.Point(6, 35);
             this.tableLayoutPanel2.Name = "tableLayoutPanel2";
             this.tableLayoutPanel2.RowCount = 2;
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel2.Size = new System.Drawing.Size(199, 98);
+            this.tableLayoutPanel2.Size = new System.Drawing.Size(175, 82);
             this.tableLayoutPanel2.TabIndex = 39;
             // 
             // pictureBox2
             // 
             this.pictureBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pictureBox2.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox2.Image")));
-            this.pictureBox2.Location = new System.Drawing.Point(6, 53);
+            this.pictureBox2.Location = new System.Drawing.Point(6, 45);
             this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(187, 39);
+            this.pictureBox2.Size = new System.Drawing.Size(163, 31);
             this.pictureBox2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox2.TabIndex = 34;
             this.pictureBox2.TabStop = false;
@@ -257,7 +258,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.pictureBox3.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox3.Image")));
             this.pictureBox3.Location = new System.Drawing.Point(6, 6);
             this.pictureBox3.Name = "pictureBox3";
-            this.pictureBox3.Size = new System.Drawing.Size(187, 38);
+            this.pictureBox3.Size = new System.Drawing.Size(163, 30);
             this.pictureBox3.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox3.TabIndex = 33;
             this.pictureBox3.TabStop = false;
@@ -271,11 +272,11 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel4.Controls.Add(this.label1, 0, 0);
-            this.tableLayoutPanel4.Location = new System.Drawing.Point(367, 41);
+            this.tableLayoutPanel4.Location = new System.Drawing.Point(340, 35);
             this.tableLayoutPanel4.Name = "tableLayoutPanel4";
             this.tableLayoutPanel4.RowCount = 1;
             this.tableLayoutPanel4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
-            this.tableLayoutPanel4.Size = new System.Drawing.Size(752, 86);
+            this.tableLayoutPanel4.Size = new System.Drawing.Size(782, 80);
             this.tableLayoutPanel4.TabIndex = 38;
             // 
             // label1
@@ -286,7 +287,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.label1.ForeColor = System.Drawing.Color.Black;
             this.label1.Location = new System.Drawing.Point(3, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(370, 86);
+            this.label1.Size = new System.Drawing.Size(385, 80);
             this.label1.TabIndex = 0;
             this.label1.Text = "Nomad4 Prod. Line";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -319,52 +320,52 @@ namespace FCT.ViewLayer.FormLibrary
             this.serialPortToolStripMenuItem});
             this.testItemSettingToolStripMenuItem.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.testItemSettingToolStripMenuItem.Name = "testItemSettingToolStripMenuItem";
-            this.testItemSettingToolStripMenuItem.Size = new System.Drawing.Size(80, 28);
+            this.testItemSettingToolStripMenuItem.Size = new System.Drawing.Size(78, 28);
             this.testItemSettingToolStripMenuItem.Text = "Setting";
             // 
             // MenuItem_Testitem
             // 
             this.MenuItem_Testitem.Name = "MenuItem_Testitem";
-            this.MenuItem_Testitem.Size = new System.Drawing.Size(227, 28);
+            this.MenuItem_Testitem.Size = new System.Drawing.Size(219, 28);
             this.MenuItem_Testitem.Text = "test item";
             this.MenuItem_Testitem.Click += new System.EventHandler(this.MenuItem_Testitem_Click);
             // 
             // MenuItem_SFCS
             // 
             this.MenuItem_SFCS.Name = "MenuItem_SFCS";
-            this.MenuItem_SFCS.Size = new System.Drawing.Size(227, 28);
+            this.MenuItem_SFCS.Size = new System.Drawing.Size(219, 28);
             this.MenuItem_SFCS.Text = "SFCS";
             this.MenuItem_SFCS.Click += new System.EventHandler(this.MenuItem_SFCS_Click);
             // 
             // MenuItem_Relays
             // 
             this.MenuItem_Relays.Name = "MenuItem_Relays";
-            this.MenuItem_Relays.Size = new System.Drawing.Size(227, 28);
+            this.MenuItem_Relays.Size = new System.Drawing.Size(219, 28);
             this.MenuItem_Relays.Text = "Relay Control";
             this.MenuItem_Relays.Click += new System.EventHandler(this.MenuItem_Relays_Click);
             // 
             // dataBaseToolStripMenuItem
             // 
             this.dataBaseToolStripMenuItem.Name = "dataBaseToolStripMenuItem";
-            this.dataBaseToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
+            this.dataBaseToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
             this.dataBaseToolStripMenuItem.Text = "Data Base";
             // 
             // sFTPToolStripMenuItem
             // 
             this.sFTPToolStripMenuItem.Name = "sFTPToolStripMenuItem";
-            this.sFTPToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
+            this.sFTPToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
             this.sFTPToolStripMenuItem.Text = "SFTP";
             // 
             // barcodeFormatToolStripMenuItem
             // 
             this.barcodeFormatToolStripMenuItem.Name = "barcodeFormatToolStripMenuItem";
-            this.barcodeFormatToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
+            this.barcodeFormatToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
             this.barcodeFormatToolStripMenuItem.Text = "Barcode Format";
             // 
             // serialPortToolStripMenuItem
             // 
             this.serialPortToolStripMenuItem.Name = "serialPortToolStripMenuItem";
-            this.serialPortToolStripMenuItem.Size = new System.Drawing.Size(227, 28);
+            this.serialPortToolStripMenuItem.Size = new System.Drawing.Size(219, 28);
             this.serialPortToolStripMenuItem.Text = "SerialPort";
             this.serialPortToolStripMenuItem.Click += new System.EventHandler(this.serialPortToolStripMenuItem_Click);
             // 
@@ -374,13 +375,13 @@ namespace FCT.ViewLayer.FormLibrary
             this.saveTxtLogFileToolStripMenuItem});
             this.fileToolStripMenuItem.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(53, 28);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(51, 28);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // saveTxtLogFileToolStripMenuItem
             // 
             this.saveTxtLogFileToolStripMenuItem.Name = "saveTxtLogFileToolStripMenuItem";
-            this.saveTxtLogFileToolStripMenuItem.Size = new System.Drawing.Size(229, 28);
+            this.saveTxtLogFileToolStripMenuItem.Size = new System.Drawing.Size(221, 28);
             this.saveTxtLogFileToolStripMenuItem.Text = "Save Txt Log File";
             // 
             // toolToolStripMenuItem
@@ -388,30 +389,50 @@ namespace FCT.ViewLayer.FormLibrary
             this.toolToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.cPKToolStripMenuItem,
             this.releaseNoteToolStripMenuItem,
-            this.aCCLabelPrintToolStripMenuItem});
+            this.aCCLabelPrintToolStripMenuItem,
+            this.sFCGetSpecialValueToolStripMenuItem});
             this.toolToolStripMenuItem.Name = "toolToolStripMenuItem";
-            this.toolToolStripMenuItem.Size = new System.Drawing.Size(59, 28);
+            this.toolToolStripMenuItem.Size = new System.Drawing.Size(57, 28);
             this.toolToolStripMenuItem.Text = "Tool";
             // 
             // cPKToolStripMenuItem
             // 
             this.cPKToolStripMenuItem.Name = "cPKToolStripMenuItem";
-            this.cPKToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
+            this.cPKToolStripMenuItem.Size = new System.Drawing.Size(264, 28);
             this.cPKToolStripMenuItem.Text = "CPK";
             // 
             // releaseNoteToolStripMenuItem
             // 
             this.releaseNoteToolStripMenuItem.Name = "releaseNoteToolStripMenuItem";
-            this.releaseNoteToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
+            this.releaseNoteToolStripMenuItem.Size = new System.Drawing.Size(264, 28);
             this.releaseNoteToolStripMenuItem.Text = "Release Note";
             this.releaseNoteToolStripMenuItem.Click += new System.EventHandler(this.releaseNoteToolStripMenuItem_Click);
             // 
             // aCCLabelPrintToolStripMenuItem
             // 
             this.aCCLabelPrintToolStripMenuItem.Name = "aCCLabelPrintToolStripMenuItem";
-            this.aCCLabelPrintToolStripMenuItem.Size = new System.Drawing.Size(222, 28);
+            this.aCCLabelPrintToolStripMenuItem.Size = new System.Drawing.Size(264, 28);
             this.aCCLabelPrintToolStripMenuItem.Text = "ACC Label Print";
             this.aCCLabelPrintToolStripMenuItem.Click += new System.EventHandler(this.aCCLabelPrintToolStripMenuItem_Click);
+            // 
+            // sFCGetSpecialValueToolStripMenuItem
+            // 
+            this.sFCGetSpecialValueToolStripMenuItem.Name = "sFCGetSpecialValueToolStripMenuItem";
+            this.sFCGetSpecialValueToolStripMenuItem.Size = new System.Drawing.Size(264, 28);
+            this.sFCGetSpecialValueToolStripMenuItem.Text = "SFC Get Special Value";
+            this.sFCGetSpecialValueToolStripMenuItem.Click += new System.EventHandler(this.sFCGetSpecialValueToolStripMenuItem_Click);
+            // 
+            // lblResultWin
+            // 
+            this.lblResultWin.AutoSize = true;
+            this.lblResultWin.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.lblResultWin.Font = new System.Drawing.Font("Calibri", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblResultWin.Location = new System.Drawing.Point(3, 79);
+            this.lblResultWin.Name = "lblResultWin";
+            this.lblResultWin.Size = new System.Drawing.Size(315, 80);
+            this.lblResultWin.TabIndex = 2;
+            this.lblResultWin.Text = "wait";
+            this.lblResultWin.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // tableLayoutPanel14
             // 
@@ -425,18 +446,18 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel14.RowCount = 2;
             this.tableLayoutPanel14.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel14.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel14.Size = new System.Drawing.Size(315, 102);
+            this.tableLayoutPanel14.Size = new System.Drawing.Size(315, 106);
             this.tableLayoutPanel14.TabIndex = 1;
             // 
             // lblModel
             // 
             this.lblModel.BackColor = System.Drawing.Color.Transparent;
             this.lblModel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblModel.Font = new System.Drawing.Font("Times New Roman", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblModel.Font = new System.Drawing.Font("Times New Roman", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblModel.ForeColor = System.Drawing.SystemColors.ControlText;
             this.lblModel.Location = new System.Drawing.Point(3, 0);
             this.lblModel.Name = "lblModel";
-            this.lblModel.Size = new System.Drawing.Size(309, 51);
+            this.lblModel.Size = new System.Drawing.Size(309, 53);
             this.lblModel.TabIndex = 38;
             this.lblModel.Text = "model";
             this.lblModel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -445,11 +466,11 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.lblStation.BackColor = System.Drawing.Color.Transparent;
             this.lblStation.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblStation.Font = new System.Drawing.Font("Times New Roman", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.lblStation.Font = new System.Drawing.Font("Times New Roman", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStation.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.lblStation.Location = new System.Drawing.Point(3, 51);
+            this.lblStation.Location = new System.Drawing.Point(3, 53);
             this.lblStation.Name = "lblStation";
-            this.lblStation.Size = new System.Drawing.Size(309, 51);
+            this.lblStation.Size = new System.Drawing.Size(309, 53);
             this.lblStation.TabIndex = 37;
             this.lblStation.Text = "station";
             this.lblStation.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -458,10 +479,10 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.panel2.Controls.Add(this.tableLayoutPanel10);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Left;
-            this.panel2.Location = new System.Drawing.Point(0, 141);
+            this.panel2.Location = new System.Drawing.Point(0, 123);
             this.panel2.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(333, 562);
+            this.panel2.Size = new System.Drawing.Size(333, 580);
             this.panel2.TabIndex = 2;
             // 
             // tableLayoutPanel10
@@ -478,7 +499,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 22.22222F));
             this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 33.33334F));
             this.tableLayoutPanel10.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 44.44445F));
-            this.tableLayoutPanel10.Size = new System.Drawing.Size(333, 562);
+            this.tableLayoutPanel10.Size = new System.Drawing.Size(333, 580);
             this.tableLayoutPanel10.TabIndex = 5;
             // 
             // groupBox1
@@ -488,7 +509,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox1.Font = new System.Drawing.Font("Consolas", 10.2F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox1.Location = new System.Drawing.Point(3, 3);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(327, 118);
+            this.groupBox1.Size = new System.Drawing.Size(327, 122);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "dut barcode input";
@@ -512,7 +533,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.tableLayoutPanel5.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
-            this.tableLayoutPanel5.Size = new System.Drawing.Size(321, 92);
+            this.tableLayoutPanel5.Size = new System.Drawing.Size(321, 96);
             this.tableLayoutPanel5.TabIndex = 7;
             // 
             // label3
@@ -520,9 +541,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.label3.AutoSize = true;
             this.label3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.label3.Font = new System.Drawing.Font("Calibri", 24F, System.Drawing.FontStyle.Bold);
-            this.label3.Location = new System.Drawing.Point(3, 46);
+            this.label3.Location = new System.Drawing.Point(3, 48);
             this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(90, 46);
+            this.label3.Size = new System.Drawing.Size(90, 48);
             this.label3.TabIndex = 39;
             this.label3.Text = "SN:";
             // 
@@ -542,7 +563,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.txtSN.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.txtSN.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtSN.Font = new System.Drawing.Font("Microsoft JhengHei UI", 16.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtSN.Location = new System.Drawing.Point(99, 49);
+            this.txtSN.Location = new System.Drawing.Point(99, 51);
             this.txtSN.Name = "txtSN";
             this.txtSN.Size = new System.Drawing.Size(219, 42);
             this.txtSN.TabIndex = 0;
@@ -554,7 +575,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.label2.Font = new System.Drawing.Font("Calibri", 24F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label2.Location = new System.Drawing.Point(3, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(90, 46);
+            this.label2.Size = new System.Drawing.Size(90, 48);
             this.label2.TabIndex = 39;
             this.label2.Text = "PN:";
             // 
@@ -563,9 +584,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox5.Controls.Add(this.tableLayoutPanel16);
             this.groupBox5.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox5.Font = new System.Drawing.Font("Consolas", 10.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox5.Location = new System.Drawing.Point(3, 314);
+            this.groupBox5.Location = new System.Drawing.Point(3, 324);
             this.groupBox5.Name = "groupBox5";
-            this.groupBox5.Size = new System.Drawing.Size(327, 245);
+            this.groupBox5.Size = new System.Drawing.Size(327, 253);
             this.groupBox5.TabIndex = 4;
             this.groupBox5.TabStop = false;
             this.groupBox5.Text = "mes information";
@@ -582,7 +603,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel16.RowCount = 2;
             this.tableLayoutPanel16.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel16.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel16.Size = new System.Drawing.Size(321, 217);
+            this.tableLayoutPanel16.Size = new System.Drawing.Size(321, 225);
             this.tableLayoutPanel16.TabIndex = 8;
             // 
             // tableLayoutPanel15
@@ -594,7 +615,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel15.Controls.Add(this.lblStartTime, 1, 0);
             this.tableLayoutPanel15.Controls.Add(this.lblDuration, 1, 2);
             this.tableLayoutPanel15.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel15.Location = new System.Drawing.Point(3, 111);
+            this.tableLayoutPanel15.Location = new System.Drawing.Point(3, 115);
             this.tableLayoutPanel15.Name = "tableLayoutPanel15";
             this.tableLayoutPanel15.RowCount = 3;
             this.tableLayoutPanel15.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 24.99812F));
@@ -602,7 +623,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel15.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25.00063F));
             this.tableLayoutPanel15.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
             this.tableLayoutPanel15.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 23F));
-            this.tableLayoutPanel15.Size = new System.Drawing.Size(315, 103);
+            this.tableLayoutPanel15.Size = new System.Drawing.Size(315, 107);
             this.tableLayoutPanel15.TabIndex = 7;
             // 
             // lblFinishTime
@@ -610,9 +631,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.lblFinishTime.AutoSize = true;
             this.lblFinishTime.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblFinishTime.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblFinishTime.Location = new System.Drawing.Point(97, 34);
+            this.lblFinishTime.Location = new System.Drawing.Point(97, 35);
             this.lblFinishTime.Name = "lblFinishTime";
-            this.lblFinishTime.Size = new System.Drawing.Size(215, 34);
+            this.lblFinishTime.Size = new System.Drawing.Size(215, 35);
             this.lblFinishTime.TabIndex = 4;
             this.lblFinishTime.Text = "label4";
             this.lblFinishTime.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -624,7 +645,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.lblStartTime.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblStartTime.Location = new System.Drawing.Point(97, 0);
             this.lblStartTime.Name = "lblStartTime";
-            this.lblStartTime.Size = new System.Drawing.Size(215, 34);
+            this.lblStartTime.Size = new System.Drawing.Size(215, 35);
             this.lblStartTime.TabIndex = 5;
             this.lblStartTime.Text = "label4";
             this.lblStartTime.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -634,9 +655,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.lblDuration.AutoSize = true;
             this.lblDuration.Dock = System.Windows.Forms.DockStyle.Fill;
             this.lblDuration.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblDuration.Location = new System.Drawing.Point(97, 68);
+            this.lblDuration.Location = new System.Drawing.Point(97, 70);
             this.lblDuration.Name = "lblDuration";
-            this.lblDuration.Size = new System.Drawing.Size(215, 35);
+            this.lblDuration.Size = new System.Drawing.Size(215, 37);
             this.lblDuration.TabIndex = 6;
             this.lblDuration.Text = "label4";
             this.lblDuration.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -646,9 +667,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox4.Controls.Add(this.tableLayoutPanel7);
             this.groupBox4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox4.Font = new System.Drawing.Font("Consolas", 10.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.groupBox4.Location = new System.Drawing.Point(3, 127);
+            this.groupBox4.Location = new System.Drawing.Point(3, 131);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(327, 181);
+            this.groupBox4.Size = new System.Drawing.Size(327, 187);
             this.groupBox4.TabIndex = 6;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "error code / final result";
@@ -657,7 +678,7 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.tableLayoutPanel7.ColumnCount = 1;
             this.tableLayoutPanel7.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel7.Controls.Add(this.lblResult, 0, 1);
+            this.tableLayoutPanel7.Controls.Add(this.lblResultWin, 0, 1);
             this.tableLayoutPanel7.Controls.Add(this.lblErrorCode, 0, 0);
             this.tableLayoutPanel7.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel7.Location = new System.Drawing.Point(3, 25);
@@ -665,20 +686,8 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel7.RowCount = 2;
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel7.Size = new System.Drawing.Size(321, 153);
+            this.tableLayoutPanel7.Size = new System.Drawing.Size(321, 159);
             this.tableLayoutPanel7.TabIndex = 0;
-            // 
-            // lblResult
-            // 
-            this.lblResult.AutoSize = true;
-            this.lblResult.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.lblResult.Font = new System.Drawing.Font("Calibri", 48F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.lblResult.Location = new System.Drawing.Point(3, 76);
-            this.lblResult.Name = "lblResult";
-            this.lblResult.Size = new System.Drawing.Size(315, 77);
-            this.lblResult.TabIndex = 2;
-            this.lblResult.Text = "wait";
-            this.lblResult.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // lblErrorCode
             // 
@@ -687,7 +696,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.lblErrorCode.ForeColor = System.Drawing.Color.DimGray;
             this.lblErrorCode.Location = new System.Drawing.Point(3, 0);
             this.lblErrorCode.Name = "lblErrorCode";
-            this.lblErrorCode.Size = new System.Drawing.Size(315, 76);
+            this.lblErrorCode.Size = new System.Drawing.Size(315, 79);
             this.lblErrorCode.TabIndex = 3;
             this.lblErrorCode.Text = "error code";
             this.lblErrorCode.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
@@ -699,7 +708,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox3.Font = new System.Drawing.Font("Consolas", 10.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox3.Location = new System.Drawing.Point(3, 3);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(361, 258);
+            this.groupBox3.Size = new System.Drawing.Size(361, 267);
             this.groupBox3.TabIndex = 3;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "control panel";
@@ -714,7 +723,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabControl2.Location = new System.Drawing.Point(3, 25);
             this.tabControl2.Name = "tabControl2";
             this.tabControl2.SelectedIndex = 0;
-            this.tabControl2.Size = new System.Drawing.Size(355, 230);
+            this.tabControl2.Size = new System.Drawing.Size(355, 239);
             this.tabControl2.TabIndex = 0;
             // 
             // tabPage6
@@ -724,7 +733,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage6.Location = new System.Drawing.Point(4, 33);
             this.tabPage6.Name = "tabPage6";
             this.tabPage6.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage6.Size = new System.Drawing.Size(347, 193);
+            this.tabPage6.Size = new System.Drawing.Size(347, 202);
             this.tabPage6.TabIndex = 2;
             this.tabPage6.Text = "common";
             this.tabPage6.UseVisualStyleBackColor = true;
@@ -735,7 +744,6 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel3.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
             this.tableLayoutPanel3.Controls.Add(this.tableLayoutPanel12, 0, 1);
             this.tableLayoutPanel3.Controls.Add(this.tableLayoutPanel13, 0, 0);
-            this.tableLayoutPanel3.Controls.Add(this.ckbIsPrintLog, 0, 2);
             this.tableLayoutPanel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel3.Location = new System.Drawing.Point(3, 3);
             this.tableLayoutPanel3.Name = "tableLayoutPanel3";
@@ -745,7 +753,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
             this.tableLayoutPanel3.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
-            this.tableLayoutPanel3.Size = new System.Drawing.Size(339, 185);
+            this.tableLayoutPanel3.Size = new System.Drawing.Size(339, 194);
             this.tableLayoutPanel3.TabIndex = 6;
             // 
             // tableLayoutPanel12
@@ -757,11 +765,11 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel12.Controls.Add(this.checkBox1, 1, 0);
             this.tableLayoutPanel12.Controls.Add(this.ckbSFCS, 0, 0);
             this.tableLayoutPanel12.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.tableLayoutPanel12.Location = new System.Drawing.Point(3, 40);
+            this.tableLayoutPanel12.Location = new System.Drawing.Point(3, 41);
             this.tableLayoutPanel12.Name = "tableLayoutPanel12";
             this.tableLayoutPanel12.RowCount = 1;
             this.tableLayoutPanel12.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel12.Size = new System.Drawing.Size(333, 31);
+            this.tableLayoutPanel12.Size = new System.Drawing.Size(333, 32);
             this.tableLayoutPanel12.TabIndex = 2;
             // 
             // checkBox1
@@ -770,7 +778,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.checkBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.checkBox1.Location = new System.Drawing.Point(171, 6);
             this.checkBox1.Name = "checkBox1";
-            this.checkBox1.Size = new System.Drawing.Size(156, 19);
+            this.checkBox1.Size = new System.Drawing.Size(156, 20);
             this.checkBox1.TabIndex = 1;
             this.checkBox1.Text = "SMT SFC";
             this.checkBox1.UseVisualStyleBackColor = true;
@@ -781,7 +789,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.ckbSFCS.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ckbSFCS.Location = new System.Drawing.Point(6, 6);
             this.ckbSFCS.Name = "ckbSFCS";
-            this.ckbSFCS.Size = new System.Drawing.Size(156, 19);
+            this.ckbSFCS.Size = new System.Drawing.Size(156, 20);
             this.ckbSFCS.TabIndex = 0;
             this.ckbSFCS.Text = "SSG SFC";
             this.ckbSFCS.UseVisualStyleBackColor = true;
@@ -799,7 +807,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel13.Name = "tableLayoutPanel13";
             this.tableLayoutPanel13.RowCount = 1;
             this.tableLayoutPanel13.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel13.Size = new System.Drawing.Size(333, 31);
+            this.tableLayoutPanel13.Size = new System.Drawing.Size(333, 32);
             this.tableLayoutPanel13.TabIndex = 3;
             // 
             // checkBox2
@@ -808,7 +816,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.checkBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.checkBox2.Location = new System.Drawing.Point(6, 6);
             this.checkBox2.Name = "checkBox2";
-            this.checkBox2.Size = new System.Drawing.Size(156, 19);
+            this.checkBox2.Size = new System.Drawing.Size(156, 20);
             this.checkBox2.TabIndex = 2;
             this.checkBox2.Text = "Admin";
             this.checkBox2.UseVisualStyleBackColor = true;
@@ -819,21 +827,10 @@ namespace FCT.ViewLayer.FormLibrary
             this.ckbFailStop.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ckbFailStop.Location = new System.Drawing.Point(171, 6);
             this.ckbFailStop.Name = "ckbFailStop";
-            this.ckbFailStop.Size = new System.Drawing.Size(156, 19);
+            this.ckbFailStop.Size = new System.Drawing.Size(156, 20);
             this.ckbFailStop.TabIndex = 1;
-            this.ckbFailStop.Text = "once fail stop";
+            this.ckbFailStop.Text = "Abort when fail";
             this.ckbFailStop.UseVisualStyleBackColor = true;
-            // 
-            // ckbIsPrintLog
-            // 
-            this.ckbIsPrintLog.AutoSize = true;
-            this.ckbIsPrintLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ckbIsPrintLog.Location = new System.Drawing.Point(3, 77);
-            this.ckbIsPrintLog.Name = "ckbIsPrintLog";
-            this.ckbIsPrintLog.Size = new System.Drawing.Size(333, 31);
-            this.ckbIsPrintLog.TabIndex = 4;
-            this.ckbIsPrintLog.Text = "ShowDutLog";
-            this.ckbIsPrintLog.UseVisualStyleBackColor = true;
             // 
             // tabPage7
             // 
@@ -841,9 +838,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage7.Location = new System.Drawing.Point(4, 33);
             this.tabPage7.Name = "tabPage7";
             this.tabPage7.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage7.Size = new System.Drawing.Size(347, 193);
+            this.tabPage7.Size = new System.Drawing.Size(347, 202);
             this.tabPage7.TabIndex = 3;
-            this.tabPage7.Text = "daq relay card";
+            this.tabPage7.Text = "DAQ Relay Card";
             this.tabPage7.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel17
@@ -858,7 +855,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel17.RowCount = 2;
             this.tableLayoutPanel17.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 80F));
             this.tableLayoutPanel17.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
-            this.tableLayoutPanel17.Size = new System.Drawing.Size(341, 187);
+            this.tableLayoutPanel17.Size = new System.Drawing.Size(341, 196);
             this.tableLayoutPanel17.TabIndex = 0;
             // 
             // btn2306
@@ -867,9 +864,9 @@ namespace FCT.ViewLayer.FormLibrary
             this.btn2306.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btn2306.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.btn2306.ForeColor = System.Drawing.Color.White;
-            this.btn2306.Location = new System.Drawing.Point(3, 152);
+            this.btn2306.Location = new System.Drawing.Point(3, 159);
             this.btn2306.Name = "btn2306";
-            this.btn2306.Size = new System.Drawing.Size(335, 32);
+            this.btn2306.Size = new System.Drawing.Size(335, 34);
             this.btn2306.TabIndex = 26;
             this.btn2306.Text = "Keithley 2306-LAN";
             this.btn2306.UseVisualStyleBackColor = false;
@@ -898,7 +895,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 25F));
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-            this.tableLayoutPanel6.Size = new System.Drawing.Size(335, 143);
+            this.tableLayoutPanel6.Size = new System.Drawing.Size(335, 150);
             this.tableLayoutPanel6.TabIndex = 24;
             // 
             // btnRelay1
@@ -907,7 +904,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.btnRelay1.ForeColor = System.Drawing.Color.White;
             this.btnRelay1.Location = new System.Drawing.Point(6, 6);
             this.btnRelay1.Name = "btnRelay1";
-            this.btnRelay1.Size = new System.Drawing.Size(157, 26);
+            this.btnRelay1.Size = new System.Drawing.Size(157, 27);
             this.btnRelay1.TabIndex = 16;
             this.btnRelay1.Text = "relay board1";
             this.btnRelay1.UseVisualStyleBackColor = true;
@@ -916,9 +913,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelay4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelay4.ForeColor = System.Drawing.Color.White;
-            this.btnRelay4.Location = new System.Drawing.Point(6, 111);
+            this.btnRelay4.Location = new System.Drawing.Point(6, 114);
             this.btnRelay4.Name = "btnRelay4";
-            this.btnRelay4.Size = new System.Drawing.Size(157, 26);
+            this.btnRelay4.Size = new System.Drawing.Size(157, 30);
             this.btnRelay4.TabIndex = 21;
             this.btnRelay4.Text = "relay board4";
             this.btnRelay4.UseVisualStyleBackColor = true;
@@ -927,9 +924,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelayCap4.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelayCap4.ForeColor = System.Drawing.Color.White;
-            this.btnRelayCap4.Location = new System.Drawing.Point(172, 111);
+            this.btnRelayCap4.Location = new System.Drawing.Point(172, 114);
             this.btnRelayCap4.Name = "btnRelayCap4";
-            this.btnRelayCap4.Size = new System.Drawing.Size(157, 26);
+            this.btnRelayCap4.Size = new System.Drawing.Size(157, 30);
             this.btnRelayCap4.TabIndex = 23;
             this.btnRelayCap4.Text = "capture card4";
             this.btnRelayCap4.UseVisualStyleBackColor = true;
@@ -938,9 +935,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelay3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelay3.ForeColor = System.Drawing.Color.White;
-            this.btnRelay3.Location = new System.Drawing.Point(6, 76);
+            this.btnRelay3.Location = new System.Drawing.Point(6, 78);
             this.btnRelay3.Name = "btnRelay3";
-            this.btnRelay3.Size = new System.Drawing.Size(157, 26);
+            this.btnRelay3.Size = new System.Drawing.Size(157, 27);
             this.btnRelay3.TabIndex = 18;
             this.btnRelay3.Text = "relay board3";
             this.btnRelay3.UseVisualStyleBackColor = true;
@@ -951,7 +948,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.btnRelayCap1.ForeColor = System.Drawing.Color.White;
             this.btnRelayCap1.Location = new System.Drawing.Point(172, 6);
             this.btnRelayCap1.Name = "btnRelayCap1";
-            this.btnRelayCap1.Size = new System.Drawing.Size(157, 26);
+            this.btnRelayCap1.Size = new System.Drawing.Size(157, 27);
             this.btnRelayCap1.TabIndex = 19;
             this.btnRelayCap1.Text = "capture card1";
             this.btnRelayCap1.UseVisualStyleBackColor = true;
@@ -960,9 +957,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelayCap3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelayCap3.ForeColor = System.Drawing.Color.White;
-            this.btnRelayCap3.Location = new System.Drawing.Point(172, 76);
+            this.btnRelayCap3.Location = new System.Drawing.Point(172, 78);
             this.btnRelayCap3.Name = "btnRelayCap3";
-            this.btnRelayCap3.Size = new System.Drawing.Size(157, 26);
+            this.btnRelayCap3.Size = new System.Drawing.Size(157, 27);
             this.btnRelayCap3.TabIndex = 22;
             this.btnRelayCap3.Text = "capture card3";
             this.btnRelayCap3.UseVisualStyleBackColor = true;
@@ -971,9 +968,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelay2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelay2.ForeColor = System.Drawing.Color.White;
-            this.btnRelay2.Location = new System.Drawing.Point(6, 41);
+            this.btnRelay2.Location = new System.Drawing.Point(6, 42);
             this.btnRelay2.Name = "btnRelay2";
-            this.btnRelay2.Size = new System.Drawing.Size(157, 26);
+            this.btnRelay2.Size = new System.Drawing.Size(157, 27);
             this.btnRelay2.TabIndex = 17;
             this.btnRelay2.Text = "relay board2";
             this.btnRelay2.UseVisualStyleBackColor = true;
@@ -982,9 +979,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.btnRelayCap2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.btnRelayCap2.ForeColor = System.Drawing.Color.White;
-            this.btnRelayCap2.Location = new System.Drawing.Point(172, 41);
+            this.btnRelayCap2.Location = new System.Drawing.Point(172, 42);
             this.btnRelayCap2.Name = "btnRelayCap2";
-            this.btnRelayCap2.Size = new System.Drawing.Size(157, 26);
+            this.btnRelayCap2.Size = new System.Drawing.Size(157, 27);
             this.btnRelayCap2.TabIndex = 20;
             this.btnRelayCap2.Text = "capture card2";
             this.btnRelayCap2.UseVisualStyleBackColor = true;
@@ -995,7 +992,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage5.Location = new System.Drawing.Point(4, 33);
             this.tabPage5.Name = "tabPage5";
             this.tabPage5.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage5.Size = new System.Drawing.Size(347, 193);
+            this.tabPage5.Size = new System.Drawing.Size(347, 202);
             this.tabPage5.TabIndex = 4;
             this.tabPage5.Text = "tcp ip";
             this.tabPage5.UseVisualStyleBackColor = true;
@@ -1011,7 +1008,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel8.RowCount = 2;
             this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel8.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel8.Size = new System.Drawing.Size(341, 187);
+            this.tableLayoutPanel8.Size = new System.Drawing.Size(341, 196);
             this.tableLayoutPanel8.TabIndex = 0;
             // 
             // lvTestItems
@@ -1022,7 +1019,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.lvTestItems.Location = new System.Drawing.Point(3, 25);
             this.lvTestItems.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.lvTestItems.Name = "lvTestItems";
-            this.lvTestItems.Size = new System.Drawing.Size(413, 348);
+            this.lvTestItems.Size = new System.Drawing.Size(413, 361);
             this.lvTestItems.TabIndex = 3;
             this.lvTestItems.UseCompatibleStateImageBehavior = false;
             // 
@@ -1032,7 +1029,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(0, 0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(419, 376);
+            this.panel3.Size = new System.Drawing.Size(419, 389);
             this.panel3.TabIndex = 3;
             // 
             // groupBox6
@@ -1042,7 +1039,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox6.Font = new System.Drawing.Font("Consolas", 10.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox6.Location = new System.Drawing.Point(0, 0);
             this.groupBox6.Name = "groupBox6";
-            this.groupBox6.Size = new System.Drawing.Size(419, 376);
+            this.groupBox6.Size = new System.Drawing.Size(419, 389);
             this.groupBox6.TabIndex = 0;
             this.groupBox6.TabStop = false;
             this.groupBox6.Text = "test items\'detail";
@@ -1061,10 +1058,10 @@ namespace FCT.ViewLayer.FormLibrary
             this.toolStripStatusLabel1,
             this.slblPortName,
             this.Status_Label});
-            this.statusStrip1.Location = new System.Drawing.Point(333, 669);
+            this.statusStrip1.Location = new System.Drawing.Point(333, 670);
             this.statusStrip1.Name = "statusStrip1";
             this.statusStrip1.Padding = new System.Windows.Forms.Padding(1, 0, 16, 0);
-            this.statusStrip1.Size = new System.Drawing.Size(799, 34);
+            this.statusStrip1.Size = new System.Drawing.Size(799, 33);
             this.statusStrip1.TabIndex = 4;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -1075,7 +1072,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.toolStripStatusLabel1.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.toolStripStatusLabel1.Name = "toolStripStatusLabel1";
             this.toolStripStatusLabel1.Size = new System.Drawing.Size(427, 28);
-            this.toolStripStatusLabel1.Text = "Primax F21 ATE, Nomad4, DVT, v1.5.2, 2026/08/05";
+            this.toolStripStatusLabel1.Text = "Primax F21 ATE, Nomad4, DVT, v2.4.0, 2026/09/29";
             this.toolStripStatusLabel1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             // 
             // slblPortName
@@ -1103,7 +1100,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.groupBox2.Font = new System.Drawing.Font("Consolas", 10.8F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.groupBox2.Location = new System.Drawing.Point(0, 0);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(419, 129);
+            this.groupBox2.Size = new System.Drawing.Size(419, 134);
             this.groupBox2.TabIndex = 1;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "log";
@@ -1119,7 +1116,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabControl1.Location = new System.Drawing.Point(3, 25);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(413, 101);
+            this.tabControl1.Size = new System.Drawing.Size(413, 106);
             this.tabControl1.TabIndex = 0;
             // 
             // tabPage1
@@ -1129,7 +1126,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage1.Location = new System.Drawing.Point(4, 33);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(405, 64);
+            this.tabPage1.Size = new System.Drawing.Size(405, 69);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "ATE Runtime";
             this.tabPage1.UseVisualStyleBackColor = true;
@@ -1142,7 +1139,8 @@ namespace FCT.ViewLayer.FormLibrary
             this.rtbLog.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.rtbLog.Location = new System.Drawing.Point(3, 3);
             this.rtbLog.Name = "rtbLog";
-            this.rtbLog.Size = new System.Drawing.Size(399, 58);
+            this.rtbLog.ReadOnly = true;
+            this.rtbLog.Size = new System.Drawing.Size(399, 63);
             this.rtbLog.TabIndex = 0;
             this.rtbLog.Text = "";
             // 
@@ -1152,7 +1150,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage2.Location = new System.Drawing.Point(4, 33);
             this.tabPage2.Name = "tabPage2";
             this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage2.Size = new System.Drawing.Size(405, 64);
+            this.tabPage2.Size = new System.Drawing.Size(405, 69);
             this.tabPage2.TabIndex = 1;
             this.tabPage2.Text = "USB";
             this.tabPage2.UseVisualStyleBackColor = true;
@@ -1165,7 +1163,8 @@ namespace FCT.ViewLayer.FormLibrary
             this.rtbUSB.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.rtbUSB.Location = new System.Drawing.Point(3, 3);
             this.rtbUSB.Name = "rtbUSB";
-            this.rtbUSB.Size = new System.Drawing.Size(399, 58);
+            this.rtbUSB.ReadOnly = true;
+            this.rtbUSB.Size = new System.Drawing.Size(399, 63);
             this.rtbUSB.TabIndex = 1;
             this.rtbUSB.Text = "";
             // 
@@ -1175,7 +1174,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage3.Location = new System.Drawing.Point(4, 33);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage3.Size = new System.Drawing.Size(405, 64);
+            this.tabPage3.Size = new System.Drawing.Size(405, 69);
             this.tabPage3.TabIndex = 2;
             this.tabPage3.Text = "SerialPort";
             this.tabPage3.UseVisualStyleBackColor = true;
@@ -1184,11 +1183,12 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.rtbSerialport.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(250)))), ((int)(((byte)(249)))), ((int)(((byte)(244)))));
             this.rtbSerialport.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rtbSerialport.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.rtbSerialport.Font = new System.Drawing.Font("新細明體", 9F);
             this.rtbSerialport.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(60)))), ((int)(((byte)(60)))));
             this.rtbSerialport.Location = new System.Drawing.Point(3, 3);
             this.rtbSerialport.Name = "rtbSerialport";
-            this.rtbSerialport.Size = new System.Drawing.Size(399, 58);
+            this.rtbSerialport.ReadOnly = true;
+            this.rtbSerialport.Size = new System.Drawing.Size(399, 63);
             this.rtbSerialport.TabIndex = 0;
             this.rtbSerialport.Text = "";
             // 
@@ -1198,7 +1198,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabPage4.Location = new System.Drawing.Point(4, 33);
             this.tabPage4.Name = "tabPage4";
             this.tabPage4.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage4.Size = new System.Drawing.Size(405, 64);
+            this.tabPage4.Size = new System.Drawing.Size(405, 69);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "DOS";
             this.tabPage4.UseVisualStyleBackColor = true;
@@ -1210,7 +1210,8 @@ namespace FCT.ViewLayer.FormLibrary
             this.rtbDOS.ForeColor = System.Drawing.Color.Lime;
             this.rtbDOS.Location = new System.Drawing.Point(3, 3);
             this.rtbDOS.Name = "rtbDOS";
-            this.rtbDOS.Size = new System.Drawing.Size(399, 58);
+            this.rtbDOS.ReadOnly = true;
+            this.rtbDOS.Size = new System.Drawing.Size(399, 63);
             this.rtbDOS.TabIndex = 1;
             this.rtbDOS.Text = "";
             // 
@@ -1219,7 +1220,7 @@ namespace FCT.ViewLayer.FormLibrary
             this.splitContainer1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.splitContainer1.Location = new System.Drawing.Point(340, 149);
+            this.splitContainer1.Location = new System.Drawing.Point(340, 131);
             this.splitContainer1.Name = "splitContainer1";
             this.splitContainer1.Orientation = System.Windows.Forms.Orientation.Horizontal;
             // 
@@ -1230,8 +1231,8 @@ namespace FCT.ViewLayer.FormLibrary
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.groupBox2);
-            this.splitContainer1.Size = new System.Drawing.Size(419, 510);
-            this.splitContainer1.SplitterDistance = 376;
+            this.splitContainer1.Size = new System.Drawing.Size(419, 528);
+            this.splitContainer1.SplitterDistance = 389;
             this.splitContainer1.SplitterWidth = 5;
             this.splitContainer1.TabIndex = 5;
             // 
@@ -1239,9 +1240,9 @@ namespace FCT.ViewLayer.FormLibrary
             // 
             this.panel6.Controls.Add(this.tableLayoutPanel11);
             this.panel6.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel6.Location = new System.Drawing.Point(765, 141);
+            this.panel6.Location = new System.Drawing.Point(765, 123);
             this.panel6.Name = "panel6";
-            this.panel6.Size = new System.Drawing.Size(367, 528);
+            this.panel6.Size = new System.Drawing.Size(367, 547);
             this.panel6.TabIndex = 6;
             // 
             // tableLayoutPanel11
@@ -1256,18 +1257,18 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel11.RowCount = 2;
             this.tableLayoutPanel11.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel11.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 50F));
-            this.tableLayoutPanel11.Size = new System.Drawing.Size(367, 528);
+            this.tableLayoutPanel11.Size = new System.Drawing.Size(367, 547);
             this.tableLayoutPanel11.TabIndex = 4;
             // 
             // dgvProductMatrix
             // 
             this.dgvProductMatrix.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.dgvProductMatrix.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.dgvProductMatrix.Location = new System.Drawing.Point(3, 267);
+            this.dgvProductMatrix.Location = new System.Drawing.Point(3, 276);
             this.dgvProductMatrix.Name = "dgvProductMatrix";
             this.dgvProductMatrix.RowHeadersWidth = 51;
             this.dgvProductMatrix.RowTemplate.Height = 27;
-            this.dgvProductMatrix.Size = new System.Drawing.Size(361, 258);
+            this.dgvProductMatrix.Size = new System.Drawing.Size(361, 268);
             this.dgvProductMatrix.TabIndex = 4;
             // 
             // tableLayoutPanel9
@@ -1296,11 +1297,11 @@ namespace FCT.ViewLayer.FormLibrary
             this.tableLayoutPanel1.Size = new System.Drawing.Size(296, 35);
             this.tableLayoutPanel1.TabIndex = 4;
             // 
-            // spDutDebugPort
+            // spUART
             // 
-            this.spDutDebugPort.ErrorReceived += new System.IO.Ports.SerialErrorReceivedEventHandler(this.spDutDebugPort_ErrorReceived);
-            this.spDutDebugPort.PinChanged += new System.IO.Ports.SerialPinChangedEventHandler(this.spDutDebugPort_PinChanged);
-            this.spDutDebugPort.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.spDutDebugPort_DataReceived);
+            this.spUART.ErrorReceived += new System.IO.Ports.SerialErrorReceivedEventHandler(this.spDutDebugPort_ErrorReceived);
+            this.spUART.PinChanged += new System.IO.Ports.SerialPinChangedEventHandler(this.spDutDebugPort_PinChanged);
+            this.spUART.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(this.spDutDebugPort_DataReceived);
             // 
             // pb_test_thread
             // 
@@ -1358,7 +1359,6 @@ namespace FCT.ViewLayer.FormLibrary
             this.tabControl2.ResumeLayout(false);
             this.tabPage6.ResumeLayout(false);
             this.tableLayoutPanel3.ResumeLayout(false);
-            this.tableLayoutPanel3.PerformLayout();
             this.tableLayoutPanel12.ResumeLayout(false);
             this.tableLayoutPanel12.PerformLayout();
             this.tableLayoutPanel13.ResumeLayout(false);
@@ -1400,7 +1400,6 @@ namespace FCT.ViewLayer.FormLibrary
         private System.IO.Ports.SerialPort spTester;
         private System.Windows.Forms.GroupBox groupBox6;
         private System.Windows.Forms.StatusStrip statusStrip1;
-        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabel1;
         private System.Windows.Forms.MenuStrip menuStrip1;
         private System.Windows.Forms.ToolStripMenuItem testItemSettingToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem MenuItem_Testitem;
@@ -1456,7 +1455,7 @@ namespace FCT.ViewLayer.FormLibrary
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel13;
         private System.Windows.Forms.CheckBox checkBox2;
-        private System.Windows.Forms.Label lblResult;
+        private System.Windows.Forms.Label lblResultWin;
         private System.Windows.Forms.GroupBox groupBox5;
         private System.Windows.Forms.Label lblErrorCode;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel5;
@@ -1479,12 +1478,13 @@ namespace FCT.ViewLayer.FormLibrary
         private PictureBox pictureBox3;
         private TableLayoutPanel tableLayoutPanel16;
         private System.Windows.Forms.Button button1;
-        private SerialPort spDutDebugPort;
+        private SerialPort spUART;
         private TableLayoutPanel tableLayoutPanel17;
         private System.Windows.Forms.Button btn2306;
-        private CheckBox ckbIsPrintLog;
         private System.Windows.Forms.ProgressBar pb_test_thread;
         private ToolStripMenuItem aCCLabelPrintToolStripMenuItem;
+        private ToolStripMenuItem sFCGetSpecialValueToolStripMenuItem;
+        private ToolStripStatusLabel toolStripStatusLabel1;
     }
 }
 

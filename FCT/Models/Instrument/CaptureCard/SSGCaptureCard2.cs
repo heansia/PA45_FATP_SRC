@@ -123,6 +123,13 @@ namespace FCT.Models.Instrument.CaptureCard
 
         #endregion
 
+        #region DI
+        public static readonly byte[] DI = { 0x00, 0x47, 0x45, 0x54, 0x49, 0x4f, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };//IOCTL:10
+
+        public static readonly byte[] DI_CaptureCard = { 0x00, 0x47, 0x45, 0x54, 0x49, 0x4f, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };//GETIO
+
+        #endregion
+
         private static readonly byte[][] GetCurrent = { Current, Current2, Current3, Current4 };
 
         private static readonly byte[][] DigitalOutputAsHigh = { caDO_01, caDO_11, caDO_21, caDO_31, caDO_41, caDO_51, caDO_61, caDO_71 };
@@ -165,7 +172,7 @@ namespace FCT.Models.Instrument.CaptureCard
                 i_value = EX_GetInputReportCaptureCard2(buffer, buffer.Length);
                 current = get_capture_card_current_value(buffer);
             }
-        
+
             on_measure_current(channelIndex, current, i_value == 1);
             return Convert.ToDouble(current);
         }
@@ -174,7 +181,7 @@ namespace FCT.Models.Instrument.CaptureCard
         {
             string voltage = "0";
             int i_value = -1;
-            
+
             if (!_isOpen)
             {
                 voltage = "-1";
@@ -186,7 +193,7 @@ namespace FCT.Models.Instrument.CaptureCard
                 i_value = EX_GetInputReportCaptureCard2(buffer, buffer.Length);
                 voltage = get_capture_card_ADC_value(buffer);
             }
-          
+
             on_measure_voltage(channelIndex, voltage, i_value == 1);
             return Convert.ToDouble(voltage);
         }
@@ -207,12 +214,30 @@ namespace FCT.Models.Instrument.CaptureCard
             return rlt;
         }
 
-        public bool GetCaptureCardDI(int channelIndex)
+        public DI_Status GetCaptureCardDI(int channelIndex)
         {
-            int i_value = EX_SetOutputReportCaptureCard2(DigitalOutputAsLow[channelIndex]);
+            int i_value = EX_SetOutputReportCaptureCard2(DI_CaptureCard);
+
             bool rlt = i_value == 1;
+
+            byte[] buffer = new byte[65];
+            i_value = EX_GetInputReportCaptureCard2(buffer, 65);
+            i_value = get_capture_DI_value(buffer, channelIndex);
             on_get_capture_card_DI(channelIndex, $"{i_value}", rlt);
-            return rlt;
+
+            if (i_value == 0)
+            {
+                return DI_Status.Low;
+            }
+            else if (i_value == 1)
+            {
+                return DI_Status.High;
+            }
+            else
+            {
+                return DI_Status.Error;
+            }
+
         }
 
         private void on_set_capture_card_digital_output(int channelIndex, string value, bool result)
@@ -275,6 +300,24 @@ namespace FCT.Models.Instrument.CaptureCard
             str = str.Split(' ')[0];
             str = (Convert.ToDouble(str) / 0.2 / 1000).ToString();
             return str;
+        }
+
+        private int get_capture_DI_value(byte[] byte_, int i)
+        {
+
+            string str = BitConverter.ToString(byte_);
+            str = str.Replace("-", "");
+            str = str.Remove(0, 8);
+            if (i < 8) { str = str.Substring(i * 2 + 1, 1); }
+            else
+            {
+                str = str.Remove(16, 2);
+                str = str.Substring(i * 2 + 1, 1);
+            }
+
+            int mm = Convert.ToInt32(str);
+
+            return mm;
         }
     }
 }

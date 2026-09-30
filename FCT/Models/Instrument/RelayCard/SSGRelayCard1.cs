@@ -235,14 +235,26 @@ namespace FCT.Models.Instrument.RelayCard
             return rlt;
         }
 
-        public int GetRelayCardDI(int channelIndex)
+        public DI_Status GetRelayCardDI(int channelIndex)
         {
             EX_SetOutputReport(DI);
             byte[] buff = new byte[65];
             int i_value = EX_GetInputReport(buff, buff.Length);
             int di_value = Convert.ToInt32(get_relay_card_DI_value(buff, channelIndex));
             on_get_capture_card_DI(channelIndex, $"{di_value}", (i_value == 1) ? true : false);
-            return di_value;
+
+            if (di_value == 0)
+            {
+                return DI_Status.Low;
+            }
+            else if (di_value == 1)
+            {
+                return DI_Status.High;
+            }
+            else
+            {
+                return DI_Status.Error;
+            }
         }
 
         public double MeasureVoltage(int channelIndex)

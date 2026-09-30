@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace FCT.Utilities
+namespace FCT.Util
 {
     public static class RegexHelper
     {

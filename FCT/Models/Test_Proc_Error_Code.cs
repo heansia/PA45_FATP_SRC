@@ -12,6 +12,7 @@ namespace FCT.Models
         BadSN,
         SfcChkStaNG,
         SfcInsertNG,
-        NoSeriPort
+        NoSeriPort,
+        TimeOut
     }
 }

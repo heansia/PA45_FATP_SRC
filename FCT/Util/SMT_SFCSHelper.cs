@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Primax.SFCS.DLL;
-namespace FCT.Utilities
+
+namespace FCT.Util
 {
 
     public class SMT_SFCSHelper

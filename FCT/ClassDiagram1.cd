@@ -1,0 +1,1147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="FCT.QBC_Test_ImplementationAttribute" Collapsed="true">
+    <Position X="33.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Printer_Test_ImplementationAttribute" Collapsed="true">
+    <Position X="37" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.USB2ETH_Test_ImplementationAttribute" Collapsed="true">
+    <Position X="37" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.argumentsAttribute" Collapsed="true">
+    <Position X="26.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedAttribute.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.RunTimeLogUpdatedEventArgs" Collapsed="true">
+    <Position X="28.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.MESSettingChangedEventArgs" Collapsed="true">
+    <Position X="33.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.MESMessageAlertEventArgs" Collapsed="true">
+    <Position X="31.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.KeyButtonTestedEventArgs" Collapsed="true">
+    <Position X="38.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAQAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.TestedEventArgs" Collapsed="true">
+    <Position X="38.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.TestFinishedEventArgs" Collapsed="true">
+    <Position X="42.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.TestErrorStatusChangedEventArgs" Collapsed="true">
+    <Position X="40.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ProductConfigChangedEventArgs" Collapsed="true">
+    <Position X="30" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ProcessStartEventArgs" Collapsed="true">
+    <Position X="42.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.MeasureVoltageEventArgs" Collapsed="true">
+    <Position X="30" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.MeasureCurrentEventArgs" Collapsed="true">
+    <Position X="28.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.SetDAQCardDOEventArgs" Collapsed="true">
+    <Position X="31.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.GetDAQCardDIEventArgs" Collapsed="true">
+    <Position X="42.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.RelayOnEventArgs" Collapsed="true">
+    <Position X="40.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.RelayOffEventArgs" Collapsed="true">
+    <Position X="38.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAIAAAAAAAAAAAAAAQAAAAAAAAAAEAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.DAQCardOpenedEventArgs" Collapsed="true">
+    <Position X="33.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAEAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.DAQCardClosedEventArgs" Collapsed="true">
+    <Position X="31.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAEAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Global" Collapsed="true">
+    <Position X="26.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>EgAAAAkAAAAAIAAAAAAAAEADAAAAAAAAAAECAABAAAA=</HashCode>
+      <FileName>Global.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Program" Collapsed="true">
+    <Position X="31.75" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAA=</HashCode>
+      <FileName>Program.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Extension.StringExt" Collapsed="true">
+    <Position X="37" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Extension\StringExt.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.BT_Module.BT_Module" Collapsed="true">
+    <Position X="1.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\BT_Module\BT_Module.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.DUT" Collapsed="true">
+    <Position X="12.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAABAAAAAEAAAAEAAEAAAAAkAAAAAACgACgCABgA=</HashCode>
+      <FileName>Models\DUT\DUT.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="FCT.Models.DUT.LowSensor.LowSensor" Collapsed="true">
+    <Position X="12.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\LowSensor\LowSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.LTSSensor.LTSSensor" Collapsed="true">
+    <Position X="17.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\LTSSensor\LTSSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.LTSSensor.LTSSensor_Ext" Collapsed="true">
+    <Position X="26.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAA=</HashCode>
+      <FileName>Models\DUT\LTSSensor\LTSSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45.PA45" Collapsed="true">
+    <Position X="24" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAEAAAAAAAAAAAAAAAAAAAAAAAACAAAACACAQgE=</HashCode>
+      <FileName>Models\DUT\PA45\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45.uname_option_Ext" Collapsed="true">
+    <Position X="35.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\PA45\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45.PrinterCommands" Collapsed="true">
+    <Position X="38.75" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BFAAIYAhACBNIAEIAoBABSkQpAEACGsKKsAEE0EAxQg=</HashCode>
+      <FileName>Models\DUT\PA45\PrinterCommands.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45_KeyBoard.PA45_KeyBoard" Collapsed="true">
+    <Position X="3.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\PA45_KeyBoard\PA45_KeyBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45_MainBoard.PA45_MainBoard" Collapsed="true">
+    <Position X="8.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\PA45_MainBoard\PA45_MainBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.PA45_PowerBoard.PA45_PowerBoard" Collapsed="true">
+    <Position X="15" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\PA45_PowerBoard\PA45_PowerBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.QBC.I2C.I2C" Collapsed="true">
+    <Position X="30" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>CEAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAgAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\I2C\I2C.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.QBC.LED.LED" Collapsed="true">
+    <Position X="42.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAgAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\LED\LED.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.QBC.NTC.NTC" Collapsed="true">
+    <Position X="35.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\NTC\NTC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.QBC.QBC" Collapsed="true">
+    <Position X="6" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAIAAAAAAAAAAAAAAAAABAAIBAAAAAAAAAECCCAAgA=</HashCode>
+      <FileName>Models\DUT\QBC\QBC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.TopSensor.TopSensor" Collapsed="true">
+    <Position X="10.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\TopSensor\TopSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.TopSensor.TopSensorExt" Collapsed="true">
+    <Position X="30" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\TopSensor\TopSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.USB2ETH.USB2ETH" Collapsed="true">
+    <Position X="19.5" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\USB2ETH\USB2ETH.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.WiFi_BT_Module.WiFi_BT_Module" Collapsed="true">
+    <Position X="21.75" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAgA=</HashCode>
+      <FileName>Models\DUT\WiFi_BT_Module\WiFi_BT_Module.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.DUT.WiFi_BT_Module.WiFi_BT_Module_Ext" Collapsed="true">
+    <Position X="26.5" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAQAAAA=</HashCode>
+      <FileName>Models\DUT\WiFi_BT_Module\WiFi_BT_Module_Ext.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.SerialCommon" Collapsed="true">
+    <Position X="30" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\SerialCommon.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.TestItem" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="26.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ABAABAAAAAAiAAACQAAAQAQIAAAAAAEAAAAgAAAAAAA=</HashCode>
+      <FileName>Models\TestItem.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.TestStatusListener" Collapsed="true">
+    <Position X="28.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\TestStatusListener.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Instrument.CaptureCard.SSGCaptureCard1" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="30" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAiBAgAAAHAAIUZAACCQqEGIQggABCAJRAFAwPCPkgA=</HashCode>
+      <FileName>Models\Instrument\CaptureCard\SSGCaptureCard1.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Instrument.CaptureCard.SSGCaptureCard2" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="31.75" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAiBAgAAAGAAIEZAACCQqEGIQgwABCAJRAFAwvCPggA=</HashCode>
+      <FileName>Models\Instrument\CaptureCard\SSGCaptureCard2.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Instrument.draft" Collapsed="true">
+    <Position X="37" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAiCAAAAAAAAAAAAAAAAABAAAAAAAAABBAAAAAAA=</HashCode>
+      <FileName>Models\Instrument\drag.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Instrument.KEITHLEY_2306_LAN" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="37" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAASAAEAAAAICFAAEAAKICACAAAAAAACAQAAgCQgAA=</HashCode>
+      <FileName>Models\Instrument\KEITHLEY_2306_LAN.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Instrument.RelayCard.SSGRelayCard1" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="33.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>mEiAQAEAACIAYAJABADQiQUKoggYBCAI5OFBwPCPggQ=</HashCode>
+      <FileName>Models\Instrument\RelayCard\SSGRelayCard1.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Instrument.RelayCard.SSGRelayCard2" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="35.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>mEiAQAEAACAAYAJABADQiQUqoggIBCQI5OFBwPCPggQ=</HashCode>
+      <FileName>Models\Instrument\RelayCard\SSGRelayCard2.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Products.BT_Module" Collapsed="true">
+    <Position X="1.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABACAAAAAAAQABAAAgAAAAAAAA=</HashCode>
+      <FileName>Models\Products\BT_Module.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.LowSensor" Collapsed="true">
+    <Position X="10.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\LowSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.LTSSensor" Collapsed="true">
+    <Position X="12.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\LTSSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.PA45" Collapsed="true">
+    <Position X="15" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IBIAAAAgAAgAAAAAAABAAAAAAAAAAAAAEgAEAQAACAA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.PA45_KeyBoard" Collapsed="true">
+    <Position X="3.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\PA45_KeyBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.PA45_MainBoard" Collapsed="true">
+    <Position X="6" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABACAAAAAAAQABAAAgAAAAAAAA=</HashCode>
+      <FileName>Models\Products\PA45_MainBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.PA45_PowerBoard" Collapsed="true">
+    <Position X="8.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABACAAAAAAAQABAAAgAAAAAAAA=</HashCode>
+      <FileName>Models\Products\PA45_PowerBoard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.Product" Collapsed="true">
+    <Position X="12.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAACECAAAAAAAIBAAgAAAAUAAAAAAAAAAgAAAAA=</HashCode>
+      <FileName>Models\Products\Product.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="FCT.Models.Products.ProductConfig" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="28.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAAIIAAAEAgBAAACBEAAUAAAAQAAAAAAAAIBAQ=</HashCode>
+      <FileName>Models\Products\ProductConfig.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.Products.QBC" Collapsed="true">
+    <Position X="17.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\QBC.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.TopSensor" Collapsed="true">
+    <Position X="19.5" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\TopSensor.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.USB2ETH" Collapsed="true">
+    <Position X="21.75" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Products\USB2ETH.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.WiFi_BT_Module" Collapsed="true">
+    <Position X="24" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAABACAAAAAAAQABAAAgAAAAAAAA=</HashCode>
+      <FileName>Models\Products\WiFi_BT_Module.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.Products.Interface.ProductBase" Collapsed="true">
+    <Position X="26.5" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAACAAAAAAAABAAAAAAAEAAAAAAAAAAggAAAA=</HashCode>
+      <FileName>Models\Products\Interface\ProductBase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.SFC.SFCFactory" Collapsed="true">
+    <Position X="35.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\SFC\SFCFactory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.SFC.SFCS_Setting" Collapsed="true">
+    <Position X="38.75" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAAAAAgEAAAAAUAABAAAAACAAQAAAAIABAAABAAA=</HashCode>
+      <FileName>Models\SFC\SFCS_Setting.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Models.SFC.SMT_SFC" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="42.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAgAAAABAAAAAQAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>Models\SFC\SMT_SFC.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Models.SFC.SSG_SFC" Collapsed="true" BaseTypeListCollapsed="true">
+    <Position X="28.25" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAgAAAABAAAAAQAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>Models\SFC\SSG_SFC.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="FCT.Properties.Resources" Collapsed="true">
+    <Position X="26.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AABgAAAAAAAAAAAAACARMAoBAQEAAAAAQAAFAAIBEoA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Properties.Settings" Collapsed="true">
+    <Position X="33.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAIAAAAAABAAAAAAAAAAAAAAA=</HashCode>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Service.DUT.Service.HON_Printer_Log_Parser" Collapsed="true">
+    <Position X="28.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>IAAIgAAAEAAAEAADQAAAAAIAAABQAAEAAAAAAQSEAAA=</HashCode>
+      <FileName>Service\DUT.Service\HON_Printer_Log_Parser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Service.SFCS.Service.SFCS_Service" Collapsed="true">
+    <Position X="37" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAEAAAgAA=</HashCode>
+      <FileName>Service\SFCS.Service\SFCS_Service.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.CsvHelper" Collapsed="true">
+    <Position X="30" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAEAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\CsvHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.DataAccess" Collapsed="true">
+    <Position X="35.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>gAAAAAAAAAAAAAQAAAAAEAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\DataAccess.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.ICardHelper" Collapsed="true">
+    <Position X="31.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIRAAgAgCTAAAAYAgUAAAIAACAAQBAJAIAFIQAQAQAA=</HashCode>
+      <FileName>Util\ICardHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.INI_Parser" Collapsed="true">
+    <Position X="33.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAIABAAgAAAAEAAAAAAACAEAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\INI_Parser.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.JsonHelpler" Collapsed="true">
+    <Position X="35.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\JsonHelpler.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.LabelPrintHelper" Collapsed="true">
+    <Position X="40.5" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAA=</HashCode>
+      <FileName>Util\LabelPrintHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.ProcessHelper" Collapsed="true">
+    <Position X="40.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAgCAAAAAAAAAAAAIAAAAAIAA=</HashCode>
+      <FileName>Util\ProcessHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.RegexHelper" Collapsed="true">
+    <Position X="35.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAQAAAAAAAABCAAAAAAAABAAAAAABIAAAA=</HashCode>
+      <FileName>Util\RegexHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.RelayHelper" Collapsed="true">
+    <Position X="37" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>GACAAAEAAFIAAQQgBABQqIF/gAQQBAwIBACA//APFgA=</HashCode>
+      <FileName>Util\RelayHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.RelaySwitchedEventEventArgs" Collapsed="true">
+    <Position X="42.25" Y="4.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\RelayHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.SFCSHelper" Collapsed="true">
+    <Position X="40.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAgAAAABAAAAAQAAAAAAAAAAAAAAAABCAAA=</HashCode>
+      <FileName>Util\SFCHepler.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.SMT_SFCSHelper" Collapsed="true">
+    <Position X="26.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAABAAAAAQAAIAAAAAAAAAAAAAACAAA=</HashCode>
+      <FileName>Util\SMT_SFCSHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.USBHelper" Collapsed="true">
+    <Position X="42.25" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAkAAAAAAACAAAIAAAAAAAAAIAAAECCAAAAAAAAAA=</HashCode>
+      <FileName>Util\USBHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.USBDataReceivedEventArgs" Collapsed="true">
+    <Position X="38.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA=</HashCode>
+      <FileName>Util\USBHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.USBDataSendEventArgs" Collapsed="true">
+    <Position X="40.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA=</HashCode>
+      <FileName>Util\USBHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.WinDeviceHelper" Collapsed="true">
+    <Position X="28.25" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAwAAIAAAACAAAAABAAAAAEAAAAAgAQAAAAAAAA=</HashCode>
+      <FileName>Util\WinDeviceHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.EthernetInfo" Collapsed="true">
+    <Position X="38.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAABAAAAAAAAAAAAEAAAQAAAAAAAQAAAQAEAAAAAA=</HashCode>
+      <FileName>Util\WinDeviceHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.Util.XmlHelper" Collapsed="true">
+    <Position X="30" Y="8.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\XmlHelper.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.ControlLibrary.CircleLabel" Collapsed="true">
+    <Position X="28.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQCAAAAAAAAAAACAQAAAAAACAUBAAAAAAAAAAAAAAIA=</HashCode>
+      <FileName>ViewLayer\ControlLibrary\CircleLabel.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.ControlLibrary.uCtrl_RelayCard" Collapsed="true">
+    <Position X="31.75" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAQACAAAAAAAACAAAACAAAAAAAAAAAAAAAAACA=</HashCode>
+      <FileName>ViewLayer\ControlLibrary\uCtrl_RelayCard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.ControlLibrary.uCtrl_TestItem" Collapsed="true">
+    <Position X="33.5" Y="7.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>cAAAAAAQACAAABAAAACAAAACAAAAAAAAgAAAAAAAACA=</HashCode>
+      <FileName>ViewLayer\ControlLibrary\uCtrl_TestItem.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmACCPrint" Collapsed="true">
+    <Position X="40.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>9yAAAHEAQCAIAJAAAICAAAADEAAQQBAAAiAgACAgIAA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmACCPrint.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmKeybutton" Collapsed="true">
+    <Position X="42.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QMAAgAEAAGAAABAAAACAAAACAABAAkEAACAAAAAAAAA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmKeybutton.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmMain" Collapsed="true">
+    <Position X="26.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>z4/76/fbd79/+t595c+p/z+///+/Eeu7/273/9//b+M=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmMain.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmProductMatrix" Collapsed="true">
+    <Position X="28.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAAQAKQAAAEAAICAAECSAEAAAAAAAAAAAAAAACA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmProductMatrix.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmRelay" Collapsed="true">
+    <Position X="30" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAACAAAAAIAACAAAACACAAAAAAQAAAAAAAAAA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmRelay.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmSensorTest" Collapsed="true">
+    <Position X="31.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAQACAAABAAAACAAAACAAAIAAAAgAAQAIAAACI=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmSensorTest.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmSerialPort" Collapsed="true">
+    <Position X="33.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>oAAAAAAQAKQAABEAAAGgAEASgEBABAAAwGAAEAgAICA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmSerialPort.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmSFCS" Collapsed="true">
+    <Position X="35.25" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAAACQAQBIgAACABQACAAAAABAIAAAAAAIAECA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmSFCS.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmSFTP" Collapsed="true">
+    <Position X="37" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAQAAAAACAAAACAAAAAAAAEAAAAQAAAAA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmSFTP.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmTestItems" Collapsed="true">
+    <Position X="38.75" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAMAAACAAABAAQASAGAgSAgAQhDAAABAGAYIAACY=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmTestItems.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="FCT.ViewLayer.FormLibrary.frmTips" Collapsed="true">
+    <Position X="40.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAQAKQAAAEAAACAAMACAAIABEAAgGgAAAAAACA=</HashCode>
+      <FileName>ViewLayer\FormLibrary\frmTips.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="FCT.Models.DUT.Interface.IDUT" Collapsed="true">
+    <Position X="30" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAABAAAAAEAAAAAAAEAAAAAkAAAAAACAACgCABAA=</HashCode>
+      <FileName>Models\DUT\Interface\IDUT.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.IDevice" Collapsed="true">
+    <Position X="28.25" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\IDevice.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.ITestItem" Collapsed="true">
+    <Position X="37" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAABAAAAAAiAAAAQAAAAAQAAAAAAAEAAAAgAAAAAAA=</HashCode>
+      <FileName>Models\ITestItem.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.Instrument.Interface.ICaptureCard" Collapsed="true">
+    <Position X="26.5" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Instrument\Interface\ICaptureCard.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.Instrument.Interface.IInstrument" Collapsed="true">
+    <Position X="0.5" Y="6.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAACAAAA=</HashCode>
+      <FileName>Models\Instrument\Interface\IInstrument.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.Instrument.Interface.IRelayCard" Collapsed="true">
+    <Position X="0.5" Y="7.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAIAABAAAAAAQ=</HashCode>
+      <FileName>Models\Instrument\Interface\IRelayCard.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.Products.Interface.IProduct" Collapsed="true">
+    <Position X="31.75" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAACAAAAAAAIBAAgAAAAEAAAAAAAAAAgAAAAA=</HashCode>
+      <FileName>Models\Products\Interface\IProduct.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.Products.Interface.IProductConfig" Collapsed="true">
+    <Position X="33.5" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAIIAAAEAgBAAACBEAAUAAAAQAAAAAAAAIBAQ=</HashCode>
+      <FileName>Models\Products\Interface\IProductConfig.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Interface Name="FCT.Models.SFC.Interface.ISFC" Collapsed="true">
+    <Position X="35.25" Y="9.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAAAAAAAAAAABAAAAAQAAAAAAAAAAAAAAAABAAAA=</HashCode>
+      <FileName>Models\SFC\Interface\ISFC.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="FCT.Models.DUT.PA45.Media_Type" Collapsed="true">
+    <Position X="26.5" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAQAAAAAAAAACAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\PA45\Media_Type.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.PA45.uname_option" Collapsed="true">
+    <Position X="30" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgO9ABAAAAAAA=</HashCode>
+      <FileName>Models\DUT\PA45\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.PA45.Printer_Error_Code" Collapsed="true">
+    <Position X="33.5" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAAAAAAAAAAAAAAACAAAAAAAAQAgAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\PA45\Printer_Error_Code.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.PA45.SUB_COMMAND" Collapsed="true">
+    <Position X="42.25" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>3oJ0EQ5pCUA0g4EKEYHgE1kAoAkMhACACIBUVFkAlEA=</HashCode>
+      <FileName>Models\DUT\PA45\PrinterCommands.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.PA45.testlabel_list" Collapsed="true">
+    <Position X="28.25" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAFCACgAAABABGAAAAAAEEAxAABgAEAAAAALgAABAA=</HashCode>
+      <FileName>Models\DUT\PA45\testlabel_list.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.Battery.BatteryBusID" Collapsed="true">
+    <Position X="26.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOABAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\Battery\Battery.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.I2C.I2C_Battery" Collapsed="true">
+    <Position X="31.75" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAgAAABAAAAAAAAAAAAAEAAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\I2C\I2C_Battery.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.I2C.I2C_Current" Collapsed="true">
+    <Position X="33.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAQAABAIAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\I2C\I2C_Current.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.I2C.I2C_Status" Collapsed="true">
+    <Position X="35.25" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAABAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\I2C\I2C_Status.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.LED.LED_ID" Collapsed="true">
+    <Position X="37" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAFoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\LED\LED_ID.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.LED.LED_Status" Collapsed="true">
+    <Position X="38.75" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAABA=</HashCode>
+      <FileName>Models\DUT\QBC\LED\LED_Status.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.DUT.QBC.NTC.NTC_ID" Collapsed="true">
+    <Position X="31.75" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\DUT\QBC\NTC\NTC_ID.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Test_Proc_Error_Code" Collapsed="true">
+    <Position X="26.5" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAEAAAAAAAAAAAAEACAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Test_Proc_Error_Code.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Instrument.Electrical_Signal_Type" Collapsed="true">
+    <Position X="42.25" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Models\Instrument\KEITHLEY_2306_LAN.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.Vendor" Collapsed="true">
+    <Position X="31.75" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\Configuration.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.MadeIn" Collapsed="true">
+    <Position X="40.5" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAgAAAAAAAABAAAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\Configuration.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.Project" Collapsed="true">
+    <Position X="35.25" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\Configuration.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.Model" Collapsed="true">
+    <Position X="30" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAIAAAAAAAAAAAAAAIAAAAAAAAAAAAAAIAACBA=</HashCode>
+      <FileName>Models\Products\Configuration.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.Version" Collapsed="true">
+    <Position X="33.5" Y="12.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.SKU" Collapsed="true">
+    <Position X="40.5" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAEAAAAAAAAAAAAAAAAQAMAAgAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.RegionalCode" Collapsed="true">
+    <Position X="37" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAAAAAAABAAAAAAAAAAAAAAAAABABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.RegionalCodeFlag" Collapsed="true">
+    <Position X="38.75" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAgAAAAAAAAAAAQAAAAAAAAAAAAAAAFA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.MediaHandling" Collapsed="true">
+    <Position X="28.25" Y="11.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAEAAAAAAAAAAAAAAAAAgAAgAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.CommunicationOptions" Collapsed="true">
+    <Position X="30" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAQAQIAAARAABAQCAAAAAAAAAAAQAAAAAAAAAEAABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="FCT.Models.Products.BatteryOptions" Collapsed="true">
+    <Position X="28.25" Y="10.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAoAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAABA=</HashCode>
+      <FileName>Models\Products\PA45.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Delegate Name="FCT.RunTimeLogUpdatedEventHanlder" Collapsed="true">
+    <Position X="33.5" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.MESSettingChangedEventHanlder" Collapsed="true">
+    <Position X="42.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAABAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.MESMessageAlertEventHanlder" Collapsed="true">
+    <Position X="40.5" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.KeyButtonTestedEventHanlder" Collapsed="true">
+    <Position X="35.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAEAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.TestedEventHandler" Collapsed="true">
+    <Position X="37" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQEAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.TestFinishedEventHandler" Collapsed="true">
+    <Position X="40.5" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAABAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.TestErrorStatusChangedEventHandler" Collapsed="true">
+    <Position X="38.75" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAEAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.ProcessStartEventHandler" Collapsed="true">
+    <Position X="26.5" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.GetLineDelegate" Collapsed="true">
+    <Position X="31.75" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.GetStringDelegate" Collapsed="true">
+    <Position X="33.5" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAACAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.MeasureVoltageEventHanlder" Collapsed="true">
+    <Position X="38.75" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAABAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.MeasureCurrentEventHanlder" Collapsed="true">
+    <Position X="37" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAgAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.SetDAQCardDOEventHanlder" Collapsed="true">
+    <Position X="35.25" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAIAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.GetDAQCardDIEventHanlder" Collapsed="true">
+    <Position X="30" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAIAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.RelayOnEventHanlder" Collapsed="true">
+    <Position X="30" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAIAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.RelayOffEventHanlder" Collapsed="true">
+    <Position X="28.25" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.DAQCardOpenedEventHanlder" Collapsed="true">
+    <Position X="28.25" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAgAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.DAQCardClosedEventHanlder" Collapsed="true">
+    <Position X="26.5" Y="13.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>ACAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>CustomizedEvents.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.Util.RelaySwitchEventHanlder" Collapsed="true">
+    <Position X="31.75" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAABAAAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\RelayHelper.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.Util.USBDataReceivedEventHanlder" Collapsed="true">
+    <Position X="42.25" Y="14" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\USBHelper.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Delegate Name="FCT.Util.USBDataSendEventHanlder" Collapsed="true">
+    <Position X="26.5" Y="14.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAQAAAAAAAQAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Util\USBHelper.cs</FileName>
+    </TypeIdentifier>
+  </Delegate>
+  <Font Name="Microsoft JhengHei UI" Size="9" />
+</ClassDiagram>

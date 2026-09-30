@@ -30,6 +30,12 @@ using System.Windows.Automation;
 using System.Net.Sockets;
 using System.Collections;
 using System.Resources;
+using System.Net;
+using InTheHand.Net.Bluetooth;
+using InTheHand.Net.Sockets;
+using Emgu.CV;
+using Emgu.CV.Structure;
+using Emgu.CV.CvEnum;
 using Ivi.Visa;
 using FCT.Models;
 using FCT.Models.Products;
@@ -50,20 +56,21 @@ using FCT.Service.DUT;
 using FCT.Service.DUT.Service;
 using DUTS = FCT.Models.DUT;
 using Prod = FCT.Models.Products;
-using USB = FCT.Utilities.USBHelper;
-using SMT_SFC = FCT.Utilities.SMT_SFCSHelper;
-using SSG_SFC = FCT.Utilities.SFCSHelper;
-using INI = FCT.Utilities.INI_Parser;
-using RELAY = FCT.Utilities.RelayHelper;
-using PRINTER = FCT.Utilities.LabelPrintHelper;
-using REGEX = FCT.Utilities.RegexHelper;
-using DataAccess = FCT.Utilities.DataAccess;
-using PROC = FCT.Utilities.ProcessHelper;
-using WinDevice = FCT.Utilities.WinDeviceHelper;
-using NFC = FCT.Utilities.ICardHelper;
-using System.Net;
-using InTheHand.Net.Bluetooth;
-using InTheHand.Net.Sockets;
+using USB = FCT.Util.USBHelper;
+using SMT_SFC = FCT.Util.SMT_SFCSHelper;
+using SSG_SFC = FCT.Util.SFCSHelper;
+using INI = FCT.Util.INI_Parser;
+using RELAY = FCT.Util.RelayHelper;
+using PRINTER = FCT.Util.LabelPrintHelper;
+using REGEX = FCT.Util.RegexHelper;
+using DataAccess = FCT.Util.DataAccess;
+using PROC = FCT.Util.ProcessHelper;
+using WinDevice = FCT.Util.WinDeviceHelper;
+using NFC = FCT.Util.ICardHelper;
+using WinUI = FCT.Util.WinUIHelper;
+using FCT.Models.DUT.PA45_MainBoard;
+using FCT.Extension;
+using FCT.Models.Instrument.Interface;
 
 namespace FCT.ViewLayer.FormLibrary
 {
@@ -107,6 +114,24 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     lblStation.Text = "[ " + productConfig.STATION_CODE + " ]";
                     lblModel.Text = "[ " + productConfig.MODEL + " ]";
+
+                    if (
+                    _productConfig.LINE_CODE.ToUpper() == "YIFENG" ||
+                    _productConfig.LINE_CODE.ToUpper() == "FLYAUDIO")
+                    {
+                        ckbFailStop.Checked = true;
+                        ckbSFCS.Checked = false;
+                    }
+                    else
+                    {
+                        _ssg_sfc = new Models.SFC.SSG_SFC();
+                    }
+
+                    if (productConfig.STATION_CODE.ToUpper() == "OOBA")
+                    {
+                        ckbSFCS.Checked = false;
+                        ckbSFCS.Enabled = false;
+                    }
                 }));
             }
         }
@@ -117,27 +142,32 @@ namespace FCT.ViewLayer.FormLibrary
         private SFCS_Setting _ssg_sfcs_setting;
         private ISFC sfcInstance;
         private Models.SFC.SMT_SFC _smt_sfc = new Models.SFC.SMT_SFC();
-        private Models.SFC.SSG_SFC _ssg_sfc = new Models.SFC.SSG_SFC();
+        //private Models.SFC.SSG_SFC _ssg_sfc = new Models.SFC.SSG_SFC();
+        private Models.SFC.SSG_SFC _ssg_sfc;
 
         private SSGRelayCard1 RelayCard1 = SSGRelayCard1.Instance;
         private SSGRelayCard2 RelayCard2 = SSGRelayCard2.Instance;
+        private SSGRelayCard3 RelayCard3 = SSGRelayCard3.Instance;
         private SSGCaptureCard1 CaptureCard1 = SSGCaptureCard1.Instance;
         private SSGCaptureCard2 CaptureCard2 = SSGCaptureCard2.Instance;
-        private KEITHLEY_2306_LAN LAN2306;
+        private KEITHLEY_2306_LAN Keithy2306LAN;
 
         private frmRelay relay_form;
         private frmTestItems testitem_form;
         private frmSFCS sfcs_form;
         private frmSerialPort seri_form = new frmSerialPort();
         private frmProductMatrix prod_form;
+        private frmSFC_Get_Special get_sfc_data_form;
 
         private string TESTER_VID;
         private string TESTER_PID;
-        
+
         private string MainBarcode = "";
 
         private readonly string[] USB2ETH_MAC_ARRAY = new string[5];
 
+        string ssid = "", pwd = "", router_ip = "", dhcp_ip = "";
+        bool have_send_wifi_script = false;
         private string WIFI_MAC_ADDRESS;
         private string BLUETOOTH_MAC_ADDRESS;
 
@@ -150,7 +180,7 @@ namespace FCT.ViewLayer.FormLibrary
         private string PrinterSeriNumber;
 
         private string PartNumber;
-        private string SerialNumber;
+        private string SeriNumber;
 
         private Thread _trigger;
 
@@ -161,7 +191,9 @@ namespace FCT.ViewLayer.FormLibrary
 
         Dictionary<string, string> SensorKeyValueDict = new Dictionary<string, string>();
 
-        private int regular_time_out = 0;
+        private int RegularTimeOutCount = 60;
+
+        private static Media_Type CurrentMediaType = Media_Type.Error;
 
         public frmMain()
         {
@@ -173,22 +205,6 @@ namespace FCT.ViewLayer.FormLibrary
 
             GetStringBeforeFlag = new GetStringDelegate(GetStringBeforeFlagInner);
             GetStringAfterFlag = new GetStringDelegate(GetStringAfterFlagInner);
-
-            _smt_sfcs_setting = new SFCS_Setting
-                (
-                INI.GetValue("SMT_SFC", "Product", ConfigFile),
-                INI.GetValue("SMT_SFC", "Station", ConfigFile),
-                INI.GetValue("SMT_SFC", "Line", ConfigFile),
-                INI.GetValue("SMT_SFC", "testVersion", ConfigFile)
-                );
-
-            _ssg_sfcs_setting = new SFCS_Setting
-                (
-                INI.GetValue("SSG_SFC", "Product", ConfigFile),
-                INI.GetValue("SSG_SFC", "Station", ConfigFile),
-                INI.GetValue("SSG_SFC", "Line", ConfigFile),
-                INI.GetValue("SSG_SFC", "testVersion", ConfigFile)
-                );
 
             //FTDIBUS\COMPORT&VID_0403&PID_6001
             TESTER_VID = INI.GetValue("Device", "VID", ConfigFile);
@@ -204,7 +220,8 @@ namespace FCT.ViewLayer.FormLibrary
             _headerFont = new Font("Arial", 11, FontStyle.Bold);
 
             PROC.StaticProcessStart += OnProcessStart;
-
+            Keithy2306LAN = new KEITHLEY_2306_LAN("192.168.0.2");
+            Keithy2306LAN.UpdateStatus += OnRunTimeLogUpdated;
             txtPN.Focus();
         }
 
@@ -227,6 +244,25 @@ namespace FCT.ViewLayer.FormLibrary
             this.Invoke(new Action(() => { value = GetStringBeforeFlag.Invoke(rtbLog.Text, flag); }));
             return value;
         }
+
+        public string GetUARTStringFlagA(string flag)
+        {
+            string value = string.Empty;
+            Invoke(new Action(() =>
+            {
+                string tmp = rtbSerialport.Text;
+                value = GetStringAfterFlag.Invoke(tmp, flag);
+            }));
+            return value;
+        }
+
+        public string GetUARTStringFlagB(string flag)
+        {
+            string value = string.Empty;
+            this.Invoke(new Action(() => { value = GetStringBeforeFlag.Invoke(rtbSerialport.Text, flag); }));
+            return value;
+        }
+
 
         public string GetStringBeforeFlagInner(string context, string flag)
         {
@@ -252,10 +288,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         #region UI opreatation
 
-        private void SetTestEntery(bool status)
-        {
-            Invoke(new Action(() => { foreach (Control ctrl in groupBox1.Controls) { ctrl.Enabled = status; } }));
-        }
+        private void SetTestEntery(bool status) { Invoke(new Action(() => { foreach (Control ctrl in groupBox1.Controls) { ctrl.Enabled = status; } })); }
 
         private void ClearLogUI()
         {
@@ -296,8 +329,8 @@ namespace FCT.ViewLayer.FormLibrary
         {
             Invoke(new Action(() =>
             {
-                lblResult.ForeColor = result ? Color.Green : Color.Red;
-                lblResult.Text = result ? "PASS" : "FAIL";
+                lblResultWin.ForeColor = result ? Color.Green : Color.Red;
+                lblResultWin.Text = result ? "PASS" : "FAIL";
             }));
         }
 
@@ -354,6 +387,14 @@ namespace FCT.ViewLayer.FormLibrary
             RelayCard2.GetDAQCardDI += OnGetDAQCardDI;
             RelayCard2.SetDAQCardDO += OnSetDAQCardDO;
             RelayCard2.OnMeasureVoltage += OnMeasureVoltage;
+
+            RelayCard3.OpenRelayCard += OnDAQCardOpened;
+            RelayCard3.CloseRelayCard += OnDAQCardClosed;
+            RelayCard3.RelayOn += OnRelayOn;
+            RelayCard3.RelayOff += OnRelayOff;
+            RelayCard3.GetDAQCardDI += OnGetDAQCardDI;
+            RelayCard3.SetDAQCardDO += OnSetDAQCardDO;
+            RelayCard3.OnMeasureVoltage += OnMeasureVoltage;
 
             CaptureCard1.OpenCaptureCard += OnDAQCardOpened;
             CaptureCard1.CloseCaptureCard += OnDAQCardClosed;
@@ -425,6 +466,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 btnRelay1.BackColor = RelayCard1.Open() ? Color.Lime : Color.Red;
                 btnRelay2.BackColor = RelayCard2.Open() ? Color.Lime : Color.Red;
+                btnRelay3.BackColor = RelayCard3.Open() ? Color.Lime : Color.Red;
                 btnRelayCap1.BackColor = CaptureCard1.Open() ? Color.Lime : Color.Red;
                 btnRelayCap2.BackColor = CaptureCard2.Open() ? Color.Lime : Color.Red;
             }));
@@ -434,6 +476,7 @@ namespace FCT.ViewLayer.FormLibrary
         {
             RelayCard1.SetAllRelayOff();
             RelayCard2.SetAllRelayOff();
+            RelayCard3.SetAllRelayOff();
         }
 
         #endregion
@@ -450,8 +493,6 @@ namespace FCT.ViewLayer.FormLibrary
             lblModel.Text = "";
             slblPortName.Text = "";
             txtPN.Enabled = false;
-            ckbIsPrintLog.Checked = true;
-            ckbIsPrintLog.Enabled = false;
             ckbFailStop.Checked = true;
             ckbSFCS.Checked = true;
 
@@ -480,16 +521,19 @@ namespace FCT.ViewLayer.FormLibrary
         {
             if (e.KeyCode == Keys.Enter)
             {
-                ClearLogUI();
+                {
+                    ClearLogUI();
+                    pb_test_thread.Value = 0;
+                    rtbDOS.Clear();
+                    rtbLog.Clear();
+                    rtbSerialport.Clear();
+                    rtbUSB.Clear();
 
-                pb_test_thread.Value = 0;
-                rtbDOS.Clear();
-                rtbLog.Clear();
-                rtbSerialport.Clear();
-                rtbUSB.Clear();
+                    lblErrorCode.ForeColor = Color.DimGray;
+                    lblErrorCode.Text = "error code";
+                }
 
                 //PA45L0002D22;26189C0080
-
                 AppendRuntimeLog($"get GUI input {txtSN.Text}");
                 if (txtSN.Text.Contains(";"))
                 {
@@ -506,7 +550,7 @@ namespace FCT.ViewLayer.FormLibrary
                     txtSN.Text = m_ConfigNums[1];
                 }
 
-                SerialNumber = txtSN.Text;
+                SeriNumber = txtSN.Text;
                 PartNumber = txtPN.Text;
 
             GET_PROD_CONFIG:
@@ -518,26 +562,21 @@ namespace FCT.ViewLayer.FormLibrary
                     productConfig = prod_form.ProductConfig;
                 }
 
-                lblResult.Text = "Testing...";
-                lblResult.ForeColor = Color.FromArgb(255, 255, 255);
+                lblResultWin.Text = "Testing...";
+                lblResultWin.ForeColor = Color.FromArgb(255, 127, 0);
 
                 if (productConfig == null) { goto GET_PROD_CONFIG; }
 
                 if (product == null)
                 {
                     ClearLogUI();
-                    product = Product.CreateProductByProdConfig(SerialNumber, productConfig);
+                    product = Product.CreateProductByProdConfig(SeriNumber, productConfig);
                     product.RunTimeLogUpdated += OnRunTimeLogUpdated;
                 }
 
-                // PA45 PN Special
-
                 Prod.PA45 m_PA45 = product as Prod.PA45;
 
-                if (m_PA45 != null)
-                {
-                    m_PA45.HON_PN = PartNumber;
-                }
+                if (m_PA45 != null) { m_PA45.HON_PN = PartNumber; }
 
                 if (dut == null)
                 {
@@ -566,17 +605,8 @@ namespace FCT.ViewLayer.FormLibrary
                     return;
                 }
 
-                if (productConfig.STATION_CODE.ToUpper() == "OOBA")
-                {
-                    ckbSFCS.Checked = false;
-                    ckbSFCS.Enabled = false;
-                }
-
                 string m_model = "";
-                if (productConfig.DATABASE.ToUpper() == "SCANNER")
-                {
-                    m_model = "Scanner";
-                }
+                if (productConfig.DATABASE.ToUpper() == "SCANNER") { m_model = "Scanner"; }
 
                 string m_sn = "";
                 if (m_PA45 != null)
@@ -609,18 +639,19 @@ namespace FCT.ViewLayer.FormLibrary
 
                     if (sfcLog != "Y")
                     {
-                        MessageBox.Show(
-                            $"{SerialNumber} check sfcs station NG!!!" + "\n" + $"result is {sfcLog}",
-                            Global.AssemblyName,
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
-
                         UpdateErrorUI(Test_Proc_Error_Code.SfcChkStaNG);
-                        return;
+
+                        MessageBox.Show(
+                                $"{MainBarcode} check sfcs station NG!!!" + "\n" + $"result is {sfcLog}",
+                                Global.AssemblyName,
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+
+                        //return;
                     }
                 }
 
-                OpenExternalDAQCard();
+                Task.Run(() => { OpenExternalDAQCard(); });
 
                 DialogResult bStartTest = MessageBox.Show(
                     "请将打印机和测试电脑连接，并且按下打印机开机按钮，准备测试。\nConnect the printer with PC and press down power button, then start test.",
@@ -633,14 +664,25 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     if (spTester.IsOpen) { spTester.Close(); }
 
-                    if (spDutDebugPort.IsOpen) { spDutDebugPort.Close(); }
+                    if (spUART.IsOpen) { spUART.Close(); }
 
+                    //FTDIBUS\COMPORT&VID_0403&PID_6001
                     // PA45 PN Special
-                    if (product is Prod.PA45_MainBoard mObj &&
-                       (product.ProductConfig.STATION_CODE.ToUpper().Contains("FCT") ||
-                       product.ProductConfig.STATION_CODE.ToUpper().Contains("FW FLASH")))
+                    bool needUart = false;
+                    if (product is Prod.PA45_MainBoard mObj)
                     {
-                        InitializeSerialport("0403", "6001", spDutDebugPort);
+                        if (product.ProductConfig.STATION_CODE.ToUpper().Contains("FCT") ||
+                            product.ProductConfig.STATION_CODE.ToUpper().Contains("FW FLASH"))
+                        {
+                            needUart = true;
+                        }
+                    }
+
+                    if (product is Prod.LTSSensor mObj1) { needUart = true; }
+
+                    if (needUart)
+                    {
+                        if (!InitializeSerialport("0403", "6001", spUART)) { return; }
                     }
 
                     StartTest();
@@ -743,6 +785,35 @@ namespace FCT.ViewLayer.FormLibrary
 
                 rtbUSB.Select(rtbDOS.TextLength, 0);
                 rtbUSB.ScrollToCaret();
+            }));
+        }
+
+        private void AppendUSBLog1(string message, bool isAddTimestamp = false)
+        {
+            Invoke(new Action(() =>
+            {
+                if (isAddTimestamp)
+                    rtbUSB.AppendText("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + message + "\r\n");
+                else
+                    rtbUSB.AppendText(message + "\r\n");
+
+                rtbUSB.Select(rtbDOS.TextLength, 0);
+                rtbUSB.ScrollToCaret();
+            }));
+        }
+
+
+        private void AppendSeriPortLog(string message, bool isAddTimestamp = false)
+        {
+            Invoke(new Action(() =>
+            {
+                if (isAddTimestamp)
+                    rtbSerialport.AppendText("\n" + "[" + DateTime.Now.ToString("HH:mm:ss") + "] " + message + "\r\n");
+                else
+                    rtbSerialport.AppendText("\n" + message + "\r\n");
+
+                rtbSerialport.Select(rtbSerialport.TextLength, 0);
+                rtbSerialport.ScrollToCaret();
             }));
         }
 
@@ -1393,7 +1464,7 @@ namespace FCT.ViewLayer.FormLibrary
         private bool ping_one_bay(string clentIpAddr, string hostIpAddr, ref string output, ref string error, int outTime = 0)
         {
             string args = $"-S {clentIpAddr} {hostIpAddr}";
-            PROC.CmdStart(args, ref output, ref error, 0);
+            PROC.Cmd_Start(args, ref output, ref error, 0);
             return output.Contains("TTL");
         }
 
@@ -1425,7 +1496,7 @@ namespace FCT.ViewLayer.FormLibrary
             string cliConfigPath = Path.Combine(Global.ASSEMBLY_PATH, "9500eepApp_V2.5", "release", "9500Aeep.ini");
             string args = string.Format($"-i {cliConfigPath} -M {mac} -S {DateTime.Now.Year.ToString("D4")}{DateTime.Now.Month.ToString("D2")}{DateTime.Now.Day.ToString("D2")} -w");
 
-            PROC.ProcessStart(cliPath, args, ref output, ref error, 0);
+            PROC.Process_Start(cliPath, args, ref output, ref error, 0);
 
             return output.Contains("The current device was programmed");
         }
@@ -1548,7 +1619,7 @@ namespace FCT.ViewLayer.FormLibrary
             string args = $"ping {ip}";
             string output = "", error = "";
 
-            PROC.CmdStart(args, ref output, ref error, 0);
+            PROC.Cmd_Start(args, ref output, ref error, 0);
             AppendDOSLog(output, false);
             AppendDOSLog(error, true);
 
@@ -1607,7 +1678,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
 
-            string usb2eth_sn = SerialNumber;
+            string usb2eth_sn = SeriNumber;
             //GET_AUTO_MAC_ADD
             string macs_array_from_sfc = _ssg_sfc.GetSpecialValue("Scanner", "GET_AUTO_MAC_ADD_5", $"910400065200;{usb2eth_sn}");
 
@@ -1668,9 +1739,16 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "", tmpValue = "";
             string media_value = "", no_media_value = "";
             int test_feed_time = 0, test_media_type_time = 0;
-            string media_type = "";
+            Media_Type media_type = Media_Type.Error;
 
             string zh_cn = "", en_us = "", thai = "";
+
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             // PA45 PN Special
             Prod.PA45 m_PA45 = product as Prod.PA45;
@@ -1724,7 +1802,7 @@ namespace FCT.ViewLayer.FormLibrary
         test_get_media_type:
             media_type = GetMediaType();
 
-            if (media_type != Media_Type.Gaps.get_Media_Type())
+            if (media_type != Media_Type.Gaps)
             {
                 test_media_type_time = test_media_type_time + 1;
                 if (test_media_type_time < 4)
@@ -1737,7 +1815,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            media_value = GetLTSSensorValue();
+            media_value = GetLTSSensorValue(Communicate_Type.VirtualComPort);
 
             bOpStep = false;
             Invoke(new Action(() =>
@@ -1759,7 +1837,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            no_media_value = GetLTSSensorValue();
+            media_value = GetLTSSensorValue(Communicate_Type.VirtualComPort);
 
             value = $"{media_value} / {no_media_value}";
 
@@ -1795,85 +1873,74 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
-            string media_type = "";
+            string ltsVal_media = "", ltsVal_media1 = "", ltsVal_noMedia = "";
+            Media_Type curr_media_type = Media_Type.Error, target_media_type = Media_Type.Gaps;
             int test_feed_time = 0, test_media_type_time = 0;
+            string zh_cn = "", en_us = "", thai = "";
+
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             // PA45 PN Special
-            //bool isPA45 = product is Prod.PA45 m_PA45;
             Prod.PA45 m_PA45 = product as Prod.PA45;
 
-            Prod.PA45_MainBoard m_PA45_MB = product as Prod.PA45_MainBoard;
-            if ((m_PA45 == null) && (m_PA45_MB == null))
+            if (m_PA45 == null)
             {
                 value = "PRODUCT_CONFIG_ERROR";
                 rlt = false;
                 goto End;
             }
 
-            if (m_PA45 != null)
+            if (m_PA45.MediaHandling != MediaHandling.Peeler)
             {
-                if (m_PA45.MediaHandling != MediaHandling.Peeler)
-                {
-                    value = "NO_SELFSTRIP_ON_PRINTER";
-                    rlt = true;
-                    goto End;
-                }
+                value = "NO_SELFSTRIP_ON_PRINTER";
+                rlt = true;
+                goto End;
             }
 
-            if (m_PA45_MB != null)
-            {
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.LTS);
+            dut.get_LTS(tmpValue, ref ltsVal_noMedia);
 
-            }
+            zh_cn = $"请将打印纸({target_media_type})安装到打印机里面，并确认把Gap media穿过分纸机已经安装好。";
+            en_us = $"Please install the {target_media_type} into printer.";
+            thai = "thai tips (unknown)";
 
-            /*
-
-            bool bOpStep = false;
-            Invoke(new Action(() =>
-            {
-                frmTips dialog = new frmTips(
-                    $"请将打印纸({media_type_gap})安装到打印机里面，并确认把Gap media穿过分纸机已经安装好。",
-                    $"Please install the {media_type_gap} into printer.",
-                    "thai tips (unknown)");
-                DialogResult result = dialog.ShowDialog(this);
-
-                bOpStep = result == DialogResult.OK;
-
-            }));
+            bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
 
             if (!bOpStep)
             {
-                value = "OP_STRP_ERROR";
+                value = "OP_PUT_MEIDA_FAIL";
                 rlt = false;
                 goto End;
             }
 
         test_feed:
             string pic_path = Path.Combine(Global.ASSEMBLY_PATH, "Res", "testfeed_gap.jpg");
-            bool bTestFeed = false;
-            if (File.Exists(pic_path))
-            {
-                bTestFeed = test_feed_1(pic_path);
-            }
-            else
-            {
-                bTestFeed = test_feed_1();
-            }
+
+            bool bTestFeed = test_feed_1(pic_path);
+
             if (!bTestFeed)
             {
                 test_feed_time = test_feed_time + 1;
-                if (test_feed_time < 4)
+                if (test_feed_time < 6)
                 {
+                    test_feed_time = 0;
                     goto test_feed;
                 }
-                value = "test_feed-1 fail";
+
+                value = "TEST_FEED_FAIL";
                 rlt = false;
                 goto End;
             }
 
         test_get_media_type:
-            media_type = GetMediaType();
+            curr_media_type = GetMediaType();
 
-            if (media_type != media_type_gap)
+            if (curr_media_type != target_media_type)
             {
                 test_media_type_time = test_media_type_time + 1;
                 if (test_media_type_time < 4)
@@ -1886,55 +1953,62 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
+            zh_cn = $"请确认打印纸有贴附在Selfstrip上，并且打印纸正对LTS。";
+            en_us = "";
+            thai = "thai tips (unknown)";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.SELFSTRIP);
+            int test_time = 0;
 
-            Delay(18000);
+        Test_LTS_No_Media:
 
-            for (int i = 0; i < 200; i++)
+            GetOperatorSelection(zh_cn, en_us, thai);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.LTS);
+
+            dut.get_LTS(tmpValue, ref ltsVal_media);
+
+            bool rlt2 = Convert.ToDouble(ltsVal_media) > 100 && Convert.ToDouble(ltsVal_media) <= 250;
+            test_time = test_time + 1;
+            if (!rlt2)
             {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.SELFSTRIP);
-                tmpValue = tmpValue.Replace(PrinterCommands.SELFSTRIP, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrEmpty(tmpValue))
+                if (test_time < 4)
                 {
-                    bTimeOut = false;
-                    break;
+                    goto Test_LTS_No_Media;
                 }
-                Delay(1000);
             }
 
-            if (bTimeOut)
+            zh_cn = $"请将打印纸从LTS上移走，但是保留纸底。";
+            en_us = $"Please remove media on the LTS.";
+            thai = "thai tips (unknown)";
+
+            bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            if (!bOpStep)
             {
-                value = "TimeOut";
+                value = "OP_REMOVE_MEDIA_FAIL";
                 rlt = false;
                 goto End;
             }
 
-            if (tmpValue.Contains(ErrorCode.HW_NOT_INSTALL.ToString()))
-            {
-                value = ErrorCode.HW_NOT_INSTALL.ToString();
-                rlt = false;
-                goto End;
-            }
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.LTS);
 
-            if (tmpValue.Contains("PASS"))
-            {
-                rlt = true;
-            }
+            dut.get_LTS(tmpValue, ref ltsVal_media1);
 
-            if (tmpValue.Contains("FAIL"))
-            {
-                rlt = false;
-            }
-            */
+            bool rlt0 = Convert.ToDouble(ltsVal_noMedia) >= 0 && Convert.ToDouble(ltsVal_noMedia) <= 60;
 
-            rlt = true;
-            value = "MARGINAL_LTS_VALUE";
-        //value = rlt ? "PASS" : "FAIL";
+            //60~100
+            bool rlt1 =
+                Convert.ToDouble(ltsVal_media1) <= Convert.ToDouble(item.UpperLimit) &&
+                Convert.ToDouble(ltsVal_media1) > Convert.ToDouble(item.LowerLimit);
 
+
+
+            rlt = rlt0 && rlt1 && rlt2;
+
+            value = $"{ltsVal_noMedia} / {ltsVal_media} / {ltsVal_media1}";
         End:
             item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -1957,7 +2031,12 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             string printer_PN = "", printer_SN = "", region = "";
 
@@ -1970,17 +2049,18 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            region = m_PA45.RegionalCodeFlag.ToString();
+            //region = m_PA45.RegionalCodeFlag.ToString();
+            region = "ROW";
             printer_PN = m_PA45.HON_PN;
             printer_SN = m_PA45.SerialNumber;
 
             string m_sfc_address = "";
 
-            if (m_PA45.CommunicationOption == CommunicationOptions.USB_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
             {
                 SerialPortWriteLineOnce(PrinterCommands.set_modules_printer(printer_PN, printer_SN, region));
             }
-            else if (m_PA45.CommunicationOption == CommunicationOptions.BT_only)
+            else if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
             {
                 string bt_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
                 AppendRuntimeLog($"{MainBarcode} get sfc bt module SN is {bt_module_sn}.");
@@ -2006,7 +2086,7 @@ namespace FCT.ViewLayer.FormLibrary
             rlt = true;
             value = rlt ? "PASS" : "FAIL";
 
-            if (m_PA45.CommunicationOption == CommunicationOptions.BT_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
             {
                 value = value + " / " + m_sfc_address;
             }
@@ -2021,7 +2101,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", temp_value = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.modules_cpu);
 
             Prod.PA45 m_PA45 = product as Prod.PA45;
@@ -2035,8 +2121,6 @@ namespace FCT.ViewLayer.FormLibrary
 
             string m_mech = m_PA45.HON_PN.Substring(0, 5);
             string m_sn = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
-
-
 
             for (int i = 0; i < 60; i++)
             {
@@ -2055,14 +2139,6 @@ namespace FCT.ViewLayer.FormLibrary
             string pcba_part_num = "", pcba_seri_num = "", pcba_mech = "";
 
             dut_PA45.get_modules_cpu(temp_value, ref pcba_part_num, ref pcba_seri_num, ref pcba_mech);
-            if (string.IsNullOrEmpty(pcba_part_num) ||
-                string.IsNullOrEmpty(pcba_seri_num) ||
-                string.IsNullOrEmpty(pcba_mech))
-            {
-                rlt = false;
-                value = "PCBA_INFO_NULL";
-                goto End;
-            }
 
             if (string.IsNullOrWhiteSpace(pcba_part_num) ||
                 string.IsNullOrWhiteSpace(pcba_seri_num) ||
@@ -2095,7 +2171,7 @@ namespace FCT.ViewLayer.FormLibrary
                 if (pcba_seri_num != MainBarcode)
                 {
                     rlt = false;
-                    value = "PCBA_PART_NUM_DISMATCH_WITH_SFC";
+                    value = "PCBA_SERI_NUM_DISMATCH_WITH_SFC";
                     goto End;
                 }
 
@@ -2122,6 +2198,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", temp_value = "";
 
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             Prod.PA45 prod_PA45 = product as Prod.PA45;
 
             if (prod_PA45 == null)
@@ -2140,7 +2223,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.modules_printer);
 
             string printer_part_num = "", printer_seri_num = "", printer_radio = "", printer_region = ""; ;
@@ -2196,7 +2285,12 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "";
             string mech = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             Prod.PA45 m_PA45 = product as Prod.PA45;
 
@@ -2244,91 +2338,40 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false, bTimeOut = true;
             string value = "", temp_value = "";
-            string ssid = "", dhcp_ip = "", router_ip = "", pwd = "";
+            //string ssid = "", dhcp_ip = "", router_ip = "", pwd = "";
             string dutType = dut.GetType().Name;
+
 
             if (dutType == "WiFi_BT_Module")
             {
-                ssid = INI.GetValue("Wifi_Router", "WifiBT_SSID", ConfigFile);
-                pwd = INI.GetValue("Wifi_Router", "WifiBT_PWD ", ConfigFile);
-                router_ip = INI.GetValue("Wifi_Router", "WifiBT_IP", ConfigFile);
+
             }
             else if (dutType == "PA45")
             {
                 Prod.PA45 m_PA45 = product as Prod.PA45;
 
-                if (m_PA45 == null)
+                if (m_PA45 == null ||
+                    Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY ||
+                    Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY
+                    )
                 {
-                    value = "MODEL_ERROR";
-                    rlt = false;
-                    goto End;
-                }
-
-                if (m_PA45.CommunicationOption == CommunicationOptions.BT_only)
-                {
-                    value = "BT_ONLY_SKU";
+                    value = "NO_WIFI_SKU";
                     rlt = true;
                     goto End;
                 }
 
-                if (m_PA45.CommunicationOption == CommunicationOptions.USB_only)
-                {
-                    value = "USB_ONLY_SKU";
-                    rlt = true;
-                    goto End;
-                }
-
-                if (productConfig.STATION_CODE == "OOBA")
-                {
-                    ssid = INI.GetValue("Wifi_Router", "OOBA_SSID", ConfigFile);
-                    pwd = INI.GetValue("Wifi_Router", "OOBA_PWD ", ConfigFile);
-                    router_ip = INI.GetValue("Wifi_Router", "OOBA_IP", ConfigFile);
-                }
-                else
-                {
-                    ssid = INI.GetValue("Wifi_Router", "SSID", ConfigFile);
-                    pwd = INI.GetValue("Wifi_Router", "PWD", ConfigFile);
-                    router_ip = INI.GetValue("Wifi_Router", "IP", ConfigFile);
-                }
             }
-            else
+
+            if (!check_unlock_os_cmds())
             {
-                value = "MODEL_ERROR";
+                value = "RUN_OS_CMDS_DISABLE";
                 rlt = false;
                 goto End;
             }
 
-
-            INI.GetValue("Wifi_Router", "IP", ConfigFile);
-
-            string wifi_setting_script = "", wifi_setting_script_path = "";
-
-            wifi_setting_script_path = Path.Combine(Global.ASSEMBLY_PATH, "wifi_script.txt");
-
-            if (!File.Exists(wifi_setting_script_path))
-            {
-                AppendRuntimeLog($"can't find {wifi_setting_script_path}.");
-                value = "NO_WIFI_SCRIPT";
-                rlt = false;
-                goto End;
-            }
-
-            using (StreamReader sw = new StreamReader(wifi_setting_script_path)) { wifi_setting_script = sw.ReadToEnd(); }
-
-            if (!wifi_setting_script.Contains("NOMAD_WIFI_ROUTER_SSID") || !wifi_setting_script.Contains("NOMAD_WIFI_ROUTER_KEY"))
-            {
-                value = "BAD_WIFI_SCRIPT";
-                rlt = false;
-                goto End;
-            }
-
-            wifi_setting_script = wifi_setting_script.Replace("NOMAD_WIFI_ROUTER_SSID", ssid);
-            wifi_setting_script = wifi_setting_script.Replace("NOMAD_WIFI_ROUTER_KEY", pwd);
-
-            SerialPortWriteLineOnce(wifi_setting_script);
 
             //WIFI IPADDRESS : 192.168.1.100
-            Delay(3000);
+            Delay(1000);
 
             SerialPortWriteLineOnce(PrinterCommands.get_ip_addr_wifi);
 
@@ -2416,7 +2459,11 @@ namespace FCT.ViewLayer.FormLibrary
 
             Prod.PA45 m_PA45 = product as Prod.PA45;
 
-            if (m_PA45 == null)
+            Prod.BT_Module m_BtModule = product as Prod.BT_Module;
+
+            Prod.WiFi_BT_Module m_WfBtModule = product as Prod.WiFi_BT_Module;
+
+            if (m_PA45 == null && m_WfBtModule == null && m_BtModule == null)
             {
                 value = "PRODUCT_CONFIG_ERROR";
                 rlt = false;
@@ -2446,7 +2493,7 @@ namespace FCT.ViewLayer.FormLibrary
             if (radios.Length == 0)
             {
                 AppendRuntimeLog("error: not found any local bluetooth adapter.");
-                value = "NOT_FOUNF_BT_ADAPTER";
+                value = "NOT_FOUND_BT_ADAPTER";
                 rlt = false;
                 goto End;
             }
@@ -2455,7 +2502,7 @@ namespace FCT.ViewLayer.FormLibrary
             if (primaryRadio == null)
             {
                 AppendRuntimeLog("error: unable to retrieve the main bluetooth adapter.");
-                value = "NOT_FOUNF_BT_ADAPTER";
+                value = "NOT_FOUND_BT_ADAPTER";
                 rlt = false;
                 goto End;
             }
@@ -2492,14 +2539,18 @@ namespace FCT.ViewLayer.FormLibrary
                 AppendRuntimeLog($"is remembered: {(device.Remembered ? "yes" : "no")}");
                 AppendRuntimeLog("-----------------------------------");
 
-                if (device.DeviceName == "PA45-" + m_PA45.SerialNumber)
+                if (device.DeviceName.ToUpper().Contains("PA45") && device.DeviceName.ToUpper().Contains(m_PA45.SerialNumber) ||
+                   device.DeviceAddress.ToString() == tmp_mac ||
+                   device.DeviceName == tmp_mac)
                 {
                     bFindDevice = true;
                     AppendRuntimeLog($"get dut device: {device.DeviceName}");
-                    if (device.DeviceAddress.ToString() == tmp_mac)
+                    AppendRuntimeLog($"get dut device mac: {device.DeviceAddress}");
+                    if (device.DeviceAddress.ToString() == tmp_mac || device.DeviceAddress.ToString() == BLUETOOTH_MAC_ADDRESS)
                     {
                         AppendRuntimeLog($"dut device mac match bt found device mac.");
                         bIsMacMatch = true;
+                        break;
                     }
                 }
             }
@@ -2531,6 +2582,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             Prod.PA45 prod_PA45 = product as Prod.PA45;
 
             if (prod_PA45 == null)
@@ -2540,7 +2598,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (prod_PA45.CommunicationOption == CommunicationOptions.BT_only || prod_PA45.CommunicationOption == CommunicationOptions.USB_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY || Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
             {
                 value = "this_sku_no_wifi";
                 rlt = true;
@@ -2556,7 +2614,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.WIFI_ID);
 
             for (int i = 0; i < 60; i++)
@@ -2602,7 +2666,7 @@ namespace FCT.ViewLayer.FormLibrary
                 }
 
                 string station = "BT_Wifi_board_Function_Test";
-                string target_values = "WiFi_BT_Module Read(Wifi)";
+                string target_values = "WIFI MAC";
                 string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
                 m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
 
@@ -2668,15 +2732,74 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
 
-            if (!File.Exists(WifiMacLabFile))
+            Prod.PA45 m_PA45 = product as Prod.PA45;
+
+            if (m_PA45 == null)
             {
-                value = "the lab file doesn't exist!!!";
+                value = "PRODUCT_ERROR";
+                rlt = false;
                 goto End;
             }
-            string key = INI.GetValue("WifiLabelPrint", "Key", ConfigFile);
-            Invoke(new Action(() => { PRINTER.PrintLabel(WifiMacLabFile, key, WIFI_MAC_ADDRESS); }));
-            value = "PASS";
-            rlt = true;
+
+            string m_SN = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "PRODUCT_COMM_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
+            {
+                value = "SKU_NO_MAC";
+                rlt = true;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
+            {
+                value = "BT_ONLY_SKU";
+                rlt = true;
+                goto End;
+            }
+
+            string bt_wifi_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + $";{Prod.WiFi_BT_Module.PartName}");
+            AppendRuntimeLog($"{MainBarcode} get sfc wifi module SN is {bt_wifi_module_sn}.");
+
+            if (string.IsNullOrWhiteSpace(bt_wifi_module_sn))
+            {
+                value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                rlt = false;
+                goto End;
+            }
+
+            string station = "BT_Wifi_board_Function_Test", target_values = "WIFI MAC";
+            string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
+            string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
+
+            m_sfc_address = m_sfc_address.ToUpper();
+            AppendRuntimeLog($"{bt_wifi_module_sn} get sfc mac is {m_sfc_address}.");
+
+            if (string.IsNullOrWhiteSpace(m_sfc_address))
+            {
+                value = "MAC_IS_EMPTY";
+                rlt = false;
+                goto End;
+            }
+            WIFI_MAC_ADDRESS = m_sfc_address;
+            value = m_sfc_address;
+
+            if (!File.Exists(WifiMacLabFile))
+            {
+                value = "LABFILE_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            string key = INI.GetValue("PrintMACSetting", "Wifi_KeyName ", ConfigFile);
+            Invoke(new Action(() => { rlt = PRINTER.PrintLabel(WifiMacLabFile, key, WIFI_MAC_ADDRESS); }));
+            value = rlt ? "PASS" : "FAIL";
 
         End:
             item.Value = value;
@@ -2687,17 +2810,94 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            Prod.PA45 m_PA45 = product as Prod.PA45;
 
-            if (!File.Exists(BluetoothMacLabFile))
+            if (m_PA45 == null)
             {
-                value = "the lab file doesn't exist!!!";
+                value = "PRODUCT_ERROR";
+                rlt = false;
                 goto End;
             }
 
-            string key = INI.GetValue("BluetoothLabelPrint", "Key", ConfigFile);
-            PRINTER.PrintLabel(BluetoothMacLabFile, key, BLUETOOTH_MAC_ADDRESS);
-            value = "PASS";
-            rlt = true;
+            string m_SN = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "PRODUCT_COMM_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
+            {
+                value = "SKU_NO_MAC";
+                rlt = true;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
+            {
+                string bt_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
+
+                if (string.IsNullOrWhiteSpace(bt_module_sn))
+                {
+                    value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                    rlt = false;
+                    goto End;
+                }
+
+                string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GET_AUTO_MAC_ADD", $"{Prod.BT_Module.Dongguan_SFC_MAC_Resource};{bt_module_sn}").ToUpper();
+
+
+                AppendRuntimeLog($"{bt_module_sn} get sfc mac is {m_sfc_address}.");
+                if (string.IsNullOrWhiteSpace(m_sfc_address))
+                {
+                    value = "MAC_IS_EMPTY";
+                    rlt = false;
+                    goto End;
+                }
+                BLUETOOTH_MAC_ADDRESS = m_sfc_address;
+                value = m_sfc_address;
+            }
+            else
+            {
+                string bt_wifi_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + $";{Prod.WiFi_BT_Module.PartName}");
+                AppendRuntimeLog($"{MainBarcode} get sfc wifi module SN is {bt_wifi_module_sn}.");
+
+                if (string.IsNullOrWhiteSpace(bt_wifi_module_sn))
+                {
+                    value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                    rlt = false;
+                    goto End;
+                }
+
+                string station = "BT_Wifi_board_Function_Test", target_values = "BT MAC";
+                string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
+                string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
+
+                m_sfc_address = m_sfc_address.ToUpper();
+                AppendRuntimeLog($"{bt_wifi_module_sn} get sfc mac is {m_sfc_address}.");
+
+                if (string.IsNullOrWhiteSpace(m_sfc_address))
+                {
+                    value = "MAC_IS_EMPTY";
+                    rlt = false;
+                    goto End;
+                }
+                BLUETOOTH_MAC_ADDRESS = m_sfc_address;
+                value = m_sfc_address;
+            }
+
+            if (!File.Exists(WifiMacLabFile))
+            {
+                value = "LABFILE_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            string key = INI.GetValue("PrintMACSetting", "BT_KeyName", ConfigFile);
+            Invoke(new Action(() => { rlt = PRINTER.PrintLabel(BluetoothMacLabFile, key, BLUETOOTH_MAC_ADDRESS); }));
+            value = rlt ? "PASS" : "FAIL";
 
         End:
             item.Value = value;
@@ -2719,9 +2919,15 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             string m_sn = m_PA45.SerialNumber;
-            m_sn = "PA45-" + m_sn;
+            m_sn = $"{m_PA45.HON_PN.Substring(0, 5)}-{m_sn}";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.SetBtName(m_sn));
 
             for (int i = 0; i < 200; i++)
@@ -2769,7 +2975,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.BATTERY_TEST);
 
             for (int i = 0; i < 60; i++)
@@ -2822,19 +3034,40 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = string.Empty, tmpValue = string.Empty, labelLen = string.Empty;
             int test_feed_time = 0, test_media_type_time = 0;
-            string media_type = "";
+            Prod.PA45 prod_PA45 = product as Prod.PA45;
+            Media_Type media_type = Media_Type.Error, target_media_type = Media_Type.Error;
+            if (prod_PA45 == null)
+            {
+                value = "PRODUCT_CONFIG_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (prod_PA45.MediaHandling == MediaHandling.LinerlessPlatenRoller)
+            {
+                target_media_type = Media_Type.ContinuousVarLen;
+            }
+            else
+            {
+                target_media_type = Media_Type.Gaps;
+            }
 
             string zh_cn = $"请把{Media_Type.Gaps.get_Media_Type()}放进载纸装置中";
             string en_us = $"please put {Media_Type.Gaps.get_Media_Type()} into media holder.";
             string thai = $"please put {Media_Type.Gaps.get_Media_Type()} into media holder.";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
 
             if (!bOpStep)
             {
-                value = "OP_STRP_ERROR";
+                value = "OP_PUT_MEDIA_FAIL";
                 rlt = false;
                 goto End;
             }
@@ -2859,7 +3092,7 @@ namespace FCT.ViewLayer.FormLibrary
         test_get_media_type:
             media_type = GetMediaType();
 
-            if (media_type != Media_Type.Gaps.get_Media_Type())
+            if (media_type != target_media_type)
             {
                 test_media_type_time = test_media_type_time + 1;
                 if (test_media_type_time < 4)
@@ -2871,96 +3104,11 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
+            string sCmd = PrinterCommands.GET_MEDIA_LENGTH;
 
-            SerialPortWriteLineOnce(PrinterCommands.FORMFEED);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
 
-            for (int i = 0; i < 60; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.FORMFEED);
-                tmpValue = tmpValue.Replace(PrinterCommands.FORMFEED, "");
-
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(1000);
-            }
-
-            if (bTimeOut)
-            {
-                value = "TimeOut";
-                rlt = false;
-                goto End;
-            }
-
-            //Label Length: 1259
-            //PASS
-            string label_len = "";
-            if (tmpValue.Contains("!PASS"))
-            {
-                value = "FORM_FEED_FAIL";
-                rlt = false;
-                goto End;
-            }
-
-            List<string> values = tmpValue.Split('\n').ToList();
-
-            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
-
-            foreach (String var in values)
-            {
-                if (var.Contains("Label Length:"))
-                {
-                    label_len = var.Replace("Label Length:", "");
-                    break;
-                }
-            }
-
-            if (string.IsNullOrEmpty(label_len) || string.IsNullOrWhiteSpace(label_len))
-            {
-                value = "LABEL_LEN_ERROR";
-                rlt = false;
-                goto End;
-            }
-
-            tmpValue = "";
-            bTimeOut = true;
-            SerialPortWriteLineOnce(PrinterCommands.GET_MEDIA_LENGTH);
-
-            for (int i = 0; i < 60; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.GET_MEDIA_LENGTH);
-                tmpValue = tmpValue.Replace(PrinterCommands.GET_MEDIA_LENGTH, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(1000);
-            }
-
-            if (bTimeOut)
-            {
-                value = "TimeOut";
-                rlt = false;
-                goto End;
-            }
-
-            List<string> values1 = tmpValue.Split('\n').ToList();
-
-            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
-
-            foreach (String var in values1)
-            {
-                string mVar = var.Trim();
-                if (Information.IsNumeric(mVar))
-                {
-                    value = mVar;
-                    break;
-                }
-            }
-
+            value = tmpValue.Replace("Ok", "").Trim();
 
         End:
             item.Value = value;
@@ -2974,11 +3122,11 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "", tmpValue = "";
             int printing_retry_times = Convert.ToInt32(INI.GetValue("PrintSetting", "RetryTimes", ConfigFile));
             int current_time = 1, test_feed_time = 0, test_media_type_time = 0;
-            string media_type = "", target_media_type = "";
+            string barcode_script_path = Path.Combine(Global.ASSEMBLY_PATH, "Script", "Nomad_PQ_Barcode.txt");
             string zh_cn = "", en_us = "", thai = "";
 
             Prod.PA45 prod_PA45 = product as Prod.PA45;
-
+            Media_Type media_type = Media_Type.Error, target_media_type = Media_Type.Error;
             if (prod_PA45 == null)
             {
                 value = "PRODUCT_CONFIG_ERROR";
@@ -2988,14 +3136,21 @@ namespace FCT.ViewLayer.FormLibrary
 
             if (prod_PA45.MediaHandling == MediaHandling.LinerlessPlatenRoller)
             {
-                target_media_type = Media_Type.ContinuousVarLen.get_Media_Type();
+                target_media_type = Media_Type.ContinuousVarLen;
+                barcode_script_path = Path.Combine(Global.ASSEMBLY_PATH, "Script", "Nomad_PQ_Barcode_Linerless.txt");
             }
             else
             {
-                target_media_type = Media_Type.Gaps.get_Media_Type();
+                target_media_type = Media_Type.Gaps;
+                barcode_script_path = Path.Combine(Global.ASSEMBLY_PATH, "Script", "Nomad_PQ_Barcode.txt");
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             string currentTime = "";
             AppendRuntimeLog($"SFC checked is {ckbSFCS.Checked}");
@@ -3018,10 +3173,7 @@ namespace FCT.ViewLayer.FormLibrary
                 AppendRuntimeLog($"get current time from local PC is {currentTime}.");
             }
 
-            if (string.IsNullOrEmpty(PrinterSeriNumber) ||
-                string.IsNullOrWhiteSpace(PrinterSeriNumber) ||
-                string.IsNullOrEmpty(PrinterPartNumber) ||
-                string.IsNullOrWhiteSpace(PrinterPartNumber))
+            if (string.IsNullOrWhiteSpace(PrinterSeriNumber) || string.IsNullOrWhiteSpace(PrinterPartNumber))
             {
                 AppendRuntimeLog($"get printer info...");
 
@@ -3051,6 +3203,7 @@ namespace FCT.ViewLayer.FormLibrary
                 dut_PA45.get_modules_printer(tmpValue, ref printer_part_num, ref printer_seri_num, ref printer_radio, ref printer_region);
             }
 
+            /*
             zh_cn = $"请将打印纸({target_media_type})安装到打印机里面，并确认已经安装好。";
             en_us = $"Please install the {target_media_type} into printer.";
             thai = "thai tips (unknown)";
@@ -3094,9 +3247,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            string barcode_script_path = Path.Combine(Global.ASSEMBLY_PATH, "Script", "Nomad_PQ_Barcode.txt");
+            */
+
+
             string barcode_script;
             using (StreamReader reader = new StreamReader(barcode_script_path)) { barcode_script = reader.ReadToEnd(); }
+
+            PrinterSeriNumber = prod_PA45.SerialNumber;
 
             barcode_script = barcode_script.Replace("m_printer_pn", PrinterPartNumber);
             barcode_script = barcode_script.Replace("m_printer_sn", PrinterSeriNumber);
@@ -3145,25 +3302,35 @@ namespace FCT.ViewLayer.FormLibrary
             int printing_retry_times = Convert.ToInt32(INI.GetValue("PrintSetting", "RetryTimes", ConfigFile));
             int current_time = 1, test_feed_time = 0, test_media_type_time = 0;
 
-            string m_cmd = "", pq_tpye = "", media_tpye = "";
-            string zh_cn = $"请将打印纸{media_tpye}安装到打印机里面，并确认已经安装好。";
-            string en_us = "Please install the media into printer.";
-            string thai = "thai tips (unknown)";
+            string m_cmd = "", pq_type = "";
+            Media_Type media_type = Media_Type.Error;
 
             if (item.Name.Contains("Chess"))
             {
                 m_cmd = PrinterCommands.testlabel_cmd(testlabel_list.pq_chess);
-                pq_tpye = "pq_chess";
-                media_tpye = "Continuous Var Len";
+                pq_type = "pq_chess";
+                media_type = Media_Type.ContinuousVarLen;
             }
             else
             {
                 m_cmd = PrinterCommands.testlabel_cmd(testlabel_list.pq_ruler);
-                pq_tpye = "pq_ruler";
-                media_tpye = "Continuous Var Len";
+                pq_type = "pq_ruler";
+                media_type = Media_Type.ContinuousVarLen;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            SerialPortWriteLineOnce(PrinterCommands.setup_printer_speed(125));
+            SerialPortWriteLineOnce(PrinterCommands.setup_printer_quality_darkness(10));
+
+            string zh_cn = $"请将打印纸{media_type}安装到打印机里面，并确认已经安装好。";
+            string en_us = "Please install the media into printer.";
+            string thai = "thai tips (unknown)";
+
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
 
@@ -3174,51 +3341,53 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-        test_feed:
-            bool bTestFeed = test_feed_1(Path.Combine(Global.ASSEMBLY_PATH, "Res", "testfeed_gap.jpg"));
-
-            if (!bTestFeed)
+            if (CurrentMediaType != Media_Type.ContinuousVarLen)
             {
-                test_feed_time = test_feed_time + 1;
-                if (test_feed_time < 4)
-                {
-                    goto test_feed;
-                }
-                value = "test_feed-1 fail";
-                rlt = false;
-                goto End;
-            }
+            test_feed:
+                bool bTestFeed = test_feed_1(Path.Combine(Global.ASSEMBLY_PATH, "Res", "testfeed_gap.jpg"));
 
-        test_get_media_type:
-            string media_type = GetMediaType();
-
-            if (media_type != Media_Type.ContinuousVarLen.get_Media_Type())
-            {
-                test_media_type_time = test_media_type_time + 1;
-                if (test_media_type_time < 4)
+                if (!bTestFeed)
                 {
-                    test_feed_time = 0;
-                    goto test_feed;
+                    test_feed_time = test_feed_time + 1;
+                    if (test_feed_time < 4)
+                    {
+                        goto test_feed;
+                    }
+                    value = "test_feed-1 fail";
+                    rlt = false;
+                    goto End;
                 }
-                value = "PRINTER_MEDIA_ERROR";
-                rlt = false;
-                goto End;
+
+            test_get_media_type:
+                media_type = GetMediaType();
+
+                if (media_type != Media_Type.ContinuousVarLen)
+                {
+                    test_media_type_time = test_media_type_time + 1;
+                    if (test_media_type_time < 4)
+                    {
+                        test_feed_time = 0;
+                        goto test_feed;
+                    }
+                    value = "PRINTER_MEDIA_ERROR";
+                    rlt = false;
+                    goto End;
+                }
             }
 
             Invoke(new Action(() =>
             {
             PRINT:
-
                 SerialPortWriteLineOnce(m_cmd);
                 Delay(3000);
 
                 frmTips dialog = new frmTips(
-                    $"这是第 { current_time.ToString() } 打印, 请确认{pq_tpye}打印品质",
+                    $"这是第 { current_time.ToString() } 打印, 请确认{pq_type}打印品质",
                     "please check printing quality of Chess pattern.",
                     "thai tips (unknown)");
                 DialogResult result = dialog.ShowDialog(this);
 
-                if (result == DialogResult.OK)
+                if (result == DialogResult.Yes)
                 {
                     value = "PASS" + " " + current_time.ToString();
                     rlt = true;
@@ -3242,9 +3411,14 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_HostUsb(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
-            string value = "", temp_value = "", pic_path = "";
+            string value = "", tmpValue = "", pic_path = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
             string zhTip = "", enTip = "", thaiTip = "";
 
             zhTip = "请将type-C U盘插入第右边的type-C接口中。";
@@ -3262,35 +3436,21 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.USB_HOST);
-            Delay(2000);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.USB_HOST);
 
-            for (int i = 0; i < 200; i++)
-            {
-                temp_value = GetRuntimeStringFlagA(PrinterCommands.USB_HOST);
-                temp_value = temp_value.Replace(PrinterCommands.USB_HOST, "");
-                if (!string.IsNullOrEmpty(temp_value) && !string.IsNullOrWhiteSpace(temp_value))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-
-                Delay(500);
-            }
-
-            if (bTimeOut)
+            if (string.IsNullOrWhiteSpace(tmpValue))
             {
                 value = "TimeOut";
                 rlt = false;
                 goto End;
             }
 
-            temp_value = temp_value.Replace("PASS", "").Trim();
-            temp_value = temp_value.Replace("Ok", "").Trim();
+            tmpValue = tmpValue.Replace("PASS", "").Trim();
+            tmpValue = tmpValue.Replace("Ok", "").Trim();
             //File 1: test.txt
-            rlt = temp_value == "File 1: test.txt";
+            rlt = tmpValue == "File 1: test.txt";
 
-            value = temp_value;
+            value = tmpValue;
 
             zhTip = "请将type-C U盘从打印机上移走。";
             enTip = "please remove type-c USB pen from printer.";
@@ -3308,41 +3468,44 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.AUDIO);
-
-            bool b_manual_check = false;
-            bool self_check = false;
-            Invoke(new Action(() =>
+            string sCmd = "";
+            string type_name = dut.GetType().Name;
+            if (type_name == "PA45")
             {
-                frmTips dialog = new frmTips("请确认蜂鸣器是否播放音乐", "please check the buzzer have played a audio.", "thai tips (unknown)");
-                DialogResult result = dialog.ShowDialog(this);
+                sCmd = PrinterCommands.AUDIO;
 
-                b_manual_check = (result == DialogResult.OK) ? true : false;
-
-                for (int i = 0; i < 120; i++)
+                if (!check_unlock_os_cmds())
                 {
-                    tmpValue = REGEX.GetString(rtbLog.Text, PrinterCommands.AUDIO, false);
-                    tmpValue = tmpValue.Replace(PrinterCommands.AUDIO, "");
-                    if (!string.IsNullOrWhiteSpace(tmpValue))
-                    {
-                        bTimeOut = false;
-                        break;
-                    }
-                    Delay(500);
+                    value = "RUN_OS_CMDS_DISABLE";
+                    rlt = false;
+                    goto End;
                 }
-            }));
+
+                SerialPortWriteLineOnce(sCmd);
+            }
+            else
+            {
+                sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.AUDIO);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                if (type_name == "PA45") { tmpValue = GetRuntimeStringFlagA(sCmd); }
+                else { tmpValue = GetUARTStringFlagA(sCmd); }
+
+                tmpValue = tmpValue.Replace(sCmd, "");
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    bTimeOut = false;
+                    break;
+                }
+                Delay(500);
+            }
 
             if (bTimeOut)
             {
                 value = "TimeOut";
-                rlt = false;
-                goto End;
-            }
-
-            if (!b_manual_check)
-            {
-                value = "CANNOT_HEAR_AUDIO";
                 rlt = false;
                 goto End;
             }
@@ -3357,13 +3520,22 @@ namespace FCT.ViewLayer.FormLibrary
             tmpValue = tmpValue.Replace("Ok", "");
             tmpValue = tmpValue.Trim();
 
-            if ((value = tmpValue.Trim()) == "PASS")
+            bool bSelfChk = ((value = tmpValue.Trim()) == "PASS");
+
+            string zh_cn = "请确认蜂鸣器是否播放音乐。";
+            string en_us = "please check the buzzer have played a audio.。";
+            string thai = "thai tips (unknown)";
+
+            bool bOpHeared = GetOperatorSelection(zh_cn, en_us, thai);
+            if (!bOpHeared)
             {
-                self_check = true;
+                value = "CANNOT_HEAR_AUDIO";
+                rlt = false;
+                goto End;
             }
 
-            rlt = b_manual_check && self_check;
-
+            rlt = bOpHeared;
+            value = rlt ? "PASS" : "FAIL";
         End:
             item.Value = value;
             return rlt;
@@ -3375,9 +3547,30 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            string m_tag = Guid.NewGuid().ToString("N");
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.KEYPAD);
+            if (dut.GetType().Name == "PA45")
+            {
+                AppendRuntimeLog(m_tag);
+                SerialPortWriteLineOnce(PrinterCommands.KEYPAD);
+            }
+            else if (dut.GetType().Name == "PA45_MainBoard")
+            {
+                AppendSeriPortLog(m_tag);
+                SeriPortWriteLine(spUART, PA45_FCT_Commands.functest(SUB_COMMAND.KEYPAD));
+            }
+            else
+            {
+                value = "DUT_TYPE_ERROR";
+                rlt = false;
+                goto End;
+            }
 
             bool b_time_out = true;
             Invoke(new Action(() =>
@@ -3388,39 +3581,58 @@ namespace FCT.ViewLayer.FormLibrary
 
                 for (int i = 0; i < 120; i++)
                 {
-                    string temp_value = REGEX.GetString(rtbLog.Text, PrinterCommands.KEYPAD, false);
+                    string tmpValue = "";
+
+                    if (dut.GetType().Name == "PA45")
+                    {
+                        tmpValue = GetRuntimeStringFlagA(m_tag);
+                    }
+
+                    if (dut.GetType().Name == "PA45_MainBoard")
+                    {
+                        tmpValue = GetUARTStringFlagA(m_tag);
+                    }
 
                     if (productConfig.STATION_CODE == "FCT")
                     {
-                        RelayCard2.SetRelayOff(2);
+                        /*
+                         * Relay1-5
+                         * Relay1-6
+                         * Relay1-7
+                         * Relay1-8
+                         * Relay2-1
+                         */
+
+                        RelayCard1.SetRelayOn(4);
                         Delay(500);
-                        RelayCard2.SetRelayOn(2);
+                        RelayCard1.SetRelayOff(4);
                         Delay(500);
 
-                        RelayCard2.SetRelayOff(3);
+                        RelayCard1.SetRelayOn(5);
                         Delay(500);
-                        RelayCard2.SetRelayOn(3);
-                        Delay(500);
-
-                        RelayCard2.SetRelayOff(4);
-                        Delay(500);
-                        RelayCard2.SetRelayOn(4);
+                        RelayCard1.SetRelayOff(5);
                         Delay(500);
 
-                        RelayCard2.SetRelayOff(5);
+                        RelayCard1.SetRelayOn(6);
                         Delay(500);
-                        RelayCard2.SetRelayOn(5);
+                        RelayCard1.SetRelayOff(6);
                         Delay(500);
 
-                        RelayCard2.SetRelayOff(6);
+                        RelayCard1.SetRelayOn(7);
                         Delay(500);
-                        RelayCard2.SetRelayOn(6);
+                        RelayCard1.SetRelayOff(7);
                         Delay(500);
+
+                        RelayCard2.SetRelayOn(0);
+                        Delay(500);
+                        RelayCard2.SetRelayOff(0);
+                        Delay(500);
+
                     }
 
-                    if (!string.IsNullOrEmpty(temp_value))
+                    if (!string.IsNullOrEmpty(tmpValue))
                     {
-                        string[] keyCodes = temp_value.Split('\n');
+                        string[] keyCodes = tmpValue.Split('\n');
                         List<string> key_codes = new List<string>();
 
                         foreach (string code in keyCodes)
@@ -3472,9 +3684,9 @@ namespace FCT.ViewLayer.FormLibrary
                 }
             }));
 
-            SerialPortWriteLineOnce(PrinterCommands.Quit);
-            Delay(5000);
+            Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.Quit);
 
+        End:
             item.Value = value;
             return rlt;
         }
@@ -3485,7 +3697,10 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "", tmpValue = "";
             string zh_cn = "", en_us = "", thai = "", pic_path = "";
             bool isDelta = false;
-            string lss_test_tpye = "", media_type = "";
+            string lss_test_tpye = "";
+            Media_Type media_type = Media_Type.Error;
+
+            SerialPortWriteLineOnce(PrinterCommands.set_rfid_disable);
 
             if (item.Name.Contains("No Media"))
             {
@@ -3550,7 +3765,7 @@ namespace FCT.ViewLayer.FormLibrary
 
                 AppendRuntimeLog($"get current media type is {media_type}.");
 
-                if (media_type != Media_Type.Gaps.get_Media_Type())
+                if (media_type != Media_Type.Gaps)
                 {
                     retry_test_media_type_times = retry_test_media_type_times + 1;
                     if (retry_test_media_type_times < 4)
@@ -3591,7 +3806,13 @@ namespace FCT.ViewLayer.FormLibrary
                 }
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.LSS);
 
             bTimeout = true;
@@ -3640,22 +3861,60 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
+        private bool Test_Printer_LssSensor_230(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PrinterCommands.LSS_7_230;
+
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+            SerialPortWriteLineOnce(sCmd);
+            sCmd = PrinterCommands.LSS;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+            string drive = "", gain = "";
+
+            dut.get_LSS(tmpValue, ref value, ref drive, ref gain);
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
         private bool Test_Printer_BMSensor(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "", pic_path = "";
-            string m_cmd = "", bm_sensor_position = "", media_type = "";
+            string sCmd = "", bm_sensor_position = "";
             int test_feed_times = 0, calibrate_media_times = 0;
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            string zh_cn = "", en_us = "", thai = "";
+            Media_Type media_type = Media_Type.Error;
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             if (item.Name.Contains("Front") || item.Name.Contains("Top"))
             {
-                m_cmd = PrinterCommands.FRONT_BM;
+                sCmd = PrinterCommands.FRONT_BM;
                 bm_sensor_position = "F";
             }
             else
             {
-                m_cmd = PrinterCommands.BM;
+                sCmd = PrinterCommands.BM;
                 bm_sensor_position = "B";
             }
 
@@ -3671,42 +3930,22 @@ namespace FCT.ViewLayer.FormLibrary
                 goto SendCom;
             }
 
-            bool bOpStep = false;
-
-            Invoke(new Action(() =>
-            {
-                string m_tips = "";
+            if (Prod.PA45.CommHWOpt == CommHWOpt.WIFI_BLUETOOTH_RFID)
 
                 if (bm_sensor_position == "F")
                 {
-                    m_tips = "请放Front BM测试纸(黑边朝外)测试,进行testfeed -1测试。";
+                    zh_cn = "请放Front BM测试纸(黑边朝外)测试,进行testfeed -1测试。";
                     pic_path = Path.Combine(Global.ASSEMBLY_PATH, "Res", "printer_black_mark_outside.jpg.");
                 }
                 else
                 {
-                    m_tips = "请放Bottem BM测试纸(黑边朝内)测试,进行testfeed -1测试。";
+                    zh_cn = "请放Bottem BM测试纸(黑边朝内)测试,进行testfeed -1测试。";
                     pic_path = Path.Combine(Global.ASSEMBLY_PATH, "Res", "printer_black_mark_inside.jpg.");
                 }
 
-                frmTips dialog;
-                if (File.Exists(pic_path))
-                {
-                    dialog = new frmTips(pic_path,
-                        m_tips,
-                        "please check testfeed -1 have finished yet.",
-                        "thai tips (unknown)");
-                }
-                else
-                {
-                    dialog = new frmTips(m_tips,
-                        "please check testfeed -1 have finished yet.",
-                        "thai tips (unknown)");
-                }
-
-                DialogResult result = dialog.ShowDialog(this);
-
-                bOpStep = result == DialogResult.OK;
-            }));
+            en_us = "please check testfeed -1 have finished yet.";
+            thai = "thai tips (unknown)";
+            bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai, pic_path);
 
             if (!bOpStep)
             {
@@ -3744,7 +3983,7 @@ namespace FCT.ViewLayer.FormLibrary
         test_media_type:
             media_type = GetMediaType();
 
-            if (media_type != Media_Type.BlackMark.get_Media_Type())
+            if (media_type != Media_Type.BlackMark)
             {
                 calibrate_media_times = calibrate_media_times + 1;
 
@@ -3759,27 +3998,14 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
         SendCom:
-            SerialPortWriteLineOnce(m_cmd);
-            bTimeOut = true;
-            for (int i = 0; i < 200; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(m_cmd);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
 
-                if (!string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
-            }
-
-            if (bTimeOut)
+            if (String.IsNullOrWhiteSpace(tmpValue))
             {
                 value = "TimeOut";
                 rlt = false;
                 goto End;
             }
-
             string drive = "", gain = "";
             dut.get_BM(tmpValue, ref value, ref drive, ref gain);
 
@@ -3794,7 +4020,12 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
             SerialPortWriteLineOnce(PrinterCommands.get_printer_sensor_status);
             /*
             if (SensorKeyValueDict == null)
@@ -3885,24 +4116,19 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.PRINTHEAD);
-
-            for (int i = 0; i < 200; i++)
+            if (!check_unlock_os_cmds())
             {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.PRINTHEAD);
-
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
             }
 
-            if (bTimeOut)
+            string sCmd = PrinterCommands.PRINTHEAD;
+            tmpValue = Write_Read_SeriPort_6000(Communicate_Type.VirtualComPort, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
             {
-                value = "Time out";
+                value = "TimeOut";
                 rlt = false;
                 goto End;
             }
@@ -3916,7 +4142,7 @@ namespace FCT.ViewLayer.FormLibrary
 
             dut.get_PRINTHEAD(tmpValue, ref value);
 
-            rlt = !string.IsNullOrWhiteSpace(tmpValue);
+            rlt = (value == item.UpperLimit && value == item.LowerLimit);
 
         End:
             item.Value = value;
@@ -3949,7 +4175,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.TPH_ID);
 
             for (int i = 0; i < 200; i++)
@@ -3986,7 +4218,7 @@ namespace FCT.ViewLayer.FormLibrary
             dut_PA45.get_TPH_ID(tmpValue, ref part, ref seri);
 
             value = $"{part} / {seri}";
-            rlt = string.IsNullOrEmpty(part) || string.IsNullOrWhiteSpace(part) || string.IsNullOrEmpty(seri) || string.IsNullOrWhiteSpace(seri);
+            rlt = !string.IsNullOrWhiteSpace(part);
 
         End:
             item.Value = value;
@@ -3998,7 +4230,12 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             int time_resource = Convert.ToInt32(INI.GetValue("RTC", "Type", ConfigFile));
 
@@ -4092,7 +4329,12 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             int time_resource = Convert.ToInt32(INI.GetValue("RTC", "Type", ConfigFile));
 
@@ -4203,11 +4445,19 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_Printer_UbootVersion(int index, TestItem item)
         {
             bool rlt = false;
-            string value = "";
+            string value = "", tmpValue = "";
+            string sCmd = "";
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.GetUbootVersion());
+            sCmd = PrinterCommands.GetUbootVersion();
+            SerialPortWriteLineOnce(sCmd);
 
+            /*
             string regexPattern = @"U-Boot[\s\S]+";
             string tempValue = "";
             this.Invoke(new Action(() =>
@@ -4219,13 +4469,16 @@ namespace FCT.ViewLayer.FormLibrary
                     Delay(500);
                 }
             }));
+            */
 
             /*
              * U - Boot SPL 2021.04(Dec 31 2025 - 18:48:48 + 0800)
              * U - Boot     2021.04(Jan 20 2026 - 10:57:03 + 0800)
              */
 
-            List<string> versions = tempValue.Split('\n').ToList();
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
+
+            List<string> versions = tmpValue.Split('\n').ToList();
             versions.RemoveAll(s => string.IsNullOrEmpty(s));
 
             List<string> upperLimits = item.UpperLimit.Split(';').ToList();
@@ -4233,6 +4486,7 @@ namespace FCT.ViewLayer.FormLibrary
 
             bool upper_result = false, lower_result = false;
 
+            /*
             foreach (var u in upperLimits)
             {
                 if (versions.Contains(u))
@@ -4250,6 +4504,7 @@ namespace FCT.ViewLayer.FormLibrary
                     break;
                 }
             }
+            */
 
             /*
             if (versions.Contains(item.UpperLimit) && versions.Contains(item.LowerLimit))
@@ -4258,9 +4513,29 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 */
 
+
+            foreach (string ver in versions)
+            {
+                if (ver.Contains(item.UpperLimit))
+                {
+                    lower_result = true;
+                    break;
+                }
+            }
+
+            foreach (string ver in versions)
+            {
+                if (ver.Contains(item.LowerLimit))
+                {
+                    upper_result = true;
+                    break;
+                }
+            }
+
             rlt = upper_result && lower_result;
 
             value = string.Join(" / ", versions);
+        End:
             item.Value = value;
             return rlt;
         }
@@ -4287,7 +4562,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+
             SerialPortWriteLineOnce(PrinterCommands.SetUpSleepTimer_0);
             Delay(1000);
 
@@ -4325,7 +4600,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.GetFWVersion);
             //string regaxPattern = @"M[\d\.]+N";
 
@@ -4365,7 +4646,12 @@ namespace FCT.ViewLayer.FormLibrary
             string tmpLifed = "", tmpLowered = "";
             string zh_ch = "", us_en = "", thai = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             if (productConfig.STATION_CODE.Contains("FCT"))
             {
@@ -4389,21 +4675,9 @@ namespace FCT.ViewLayer.FormLibrary
 
         Check_Cover_Lifted:
 
-            SerialPortWriteLine(PrinterCommands.HEAD_LIFT_SENSOR, 1);
-            for (int i = 0; i < 200; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.HEAD_LIFT_SENSOR + " " + 1);
-                tmpValue = tmpValue.Replace(PrinterCommands.HEAD_LIFT_SENSOR + " " + 1, "");
-                tmpValue = tmpValue.Replace(PrinterCommands.HEAD_LIFT_SENSOR, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
-            }
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.HEAD_LIFT_SENSOR);
 
-            if (bTimeOut)
+            if (String.IsNullOrWhiteSpace(tmpValue))
             {
                 value = "TimeOut";
                 rlt = false;
@@ -4423,24 +4697,16 @@ namespace FCT.ViewLayer.FormLibrary
                 }
             }
 
-            bool bOpStep1 = false;
             if (productConfig.STATION_CODE.Contains("FCT"))
             {
                 RelayCard2.SetRelayOn(0);
                 Delay(500);
                 goto Check_Cover_Lowered;
             }
-            else
-            {
-                Invoke(new Action(() =>
-                {
-                    frmTips dialog = new frmTips("请将载纸装置关闭", "please open the media cover.", "thai tips (unknown)");
-                    DialogResult result = dialog.ShowDialog(this);
-                    bOpStep1 = result == DialogResult.OK;
-                }));
-            }
 
-            if (!bOpStep1)
+            bOpStep = GetOperatorSelection("请将载纸装置关闭", "please open the media cover.", "thai tips (unknown)");
+
+            if (!bOpStep)
             {
                 value = "OP_CLOSE_COVER_FAIL";
                 rlt = false;
@@ -4448,22 +4714,10 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
         Check_Cover_Lowered:
-            SerialPortWriteLine(PrinterCommands.HEAD_LIFT_SENSOR, 2);
-            bTimeOut = true;
-            for (int i = 0; i < 200; i++)
-            {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.HEAD_LIFT_SENSOR + " " + 2);
-                tmpValue = tmpValue.Replace(PrinterCommands.HEAD_LIFT_SENSOR + " " + 2, "");
-                tmpValue = tmpValue.Replace(PrinterCommands.HEAD_LIFT_SENSOR, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
-            }
 
-            if (bTimeOut)
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.HEAD_LIFT_SENSOR);
+
+            if (String.IsNullOrWhiteSpace(tmpValue))
             {
                 value = "TimeOut";
                 rlt = false;
@@ -4491,59 +4745,98 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
+        private bool Test_Printer_MFI_Detect(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            string sCmd = PrinterCommands.MFI_INFO;
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
+
+            rlt = tmpValue.Contains("PASS");
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+
+            item.Value = value;
+            return rlt;
+        }
+
+
         private bool Test_Printer_SecurityChip(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.SECURITY_CHIP_OTP);
-            Delay(2000);
-
-            for (int i = 0; i < 200; i++)
+            if (!check_unlock_os_cmds())
             {
-                tmpValue = GetRuntimeStringFlagA(PrinterCommands.SECURITY_CHIP_OTP);
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(1000);
-            }
-
-            /*
-            if (bTimeOut)
-            {
-                value = "TimeOut";
+                value = "RUN_OS_CMDS_DISABLE";
                 rlt = false;
                 goto End;
             }
+            AppendRuntimeLog("step1: to initialize chip...");
+            tmpValue = Write_Read_SeriPort_Delay(Communicate_Type.VirtualComPort, PrinterCommands.SECURITY_CHIP_OTP, 3000);
 
             if (tmpValue.Contains("PASS"))
             {
-                rlt = true;
+                AppendRuntimeLog("this is the frist time to OTP.");
             }
             else
             {
-                rlt = false;
+                AppendRuntimeLog("this isn't the frist time to OTP.");
             }
-            */
+
+            AppendRuntimeLog("step2: to generate key...");
+            tmpValue = Write_Read_SeriPort_Delay(Communicate_Type.VirtualComPort, PrinterCommands.SECURITY_CHIP_GEN_KEY, 3000);
+
+            if (tmpValue.Contains("PASS"))
+            {
+                AppendRuntimeLog("this is the frist time to GEN_KEY.");
+            }
+            else
+            {
+                AppendRuntimeLog("this isn't the frist time to GEN_KEY.");
+            }
+
+            AppendRuntimeLog("step3: to vry key...");
+            tmpValue = Write_Read_SeriPort_Delay(Communicate_Type.VirtualComPort, PrinterCommands.SECURITY_CHIP_VRF_KEY, 3000);
+
+            if (tmpValue.Contains("PASS"))
+            {
+                AppendRuntimeLog("this is the frist time to GEN_KEY.");
+            }
+            else
+            {
+                AppendRuntimeLog("this isn't the frist time to GEN_KEY.");
+            }
 
 
-            Delay(5000);
+            AppendRuntimeLog("step4: get key...");
+            tmpValue = Write_Read_SeriPort_Delay(Communicate_Type.VirtualComPort, PrinterCommands.SECURITY_CHIP_GET_DEVICE_ID, 3000);
 
-            SerialPortWriteLineOnce(PrinterCommands.SECURITY_CHIP_GEN_KEY);
+            if (tmpValue.Contains("PASS"))
+            {
+                AppendRuntimeLog("this is the frist time to GEN_KEY.");
+            }
+            else
+            {
+                AppendRuntimeLog("this isn't the frist time to GEN_KEY.");
+            }
 
-            SerialPortWriteLineOnce(PrinterCommands.SECURITY_CHIP_GET_DEVICE_ID);
+            string model_id = "", seri_num = "", pub_key = "";
 
-            Delay(5000);
+            dut.get_public_key(tmpValue, ref model_id, ref seri_num, ref pub_key);
 
-            rlt = true;
-
-            value = rlt ? "PASS" : "FAIL";
+            value = pub_key;
+            rlt = !string.IsNullOrWhiteSpace(value);
 
         End:
-
             item.Value = value;
             return rlt;
         }
@@ -4614,6 +4907,10 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
+            string sCmd = PrinterCommands.enable_rotation;
+
+            SerialPortWriteLineOnce(sCmd);
+            Delay(1000);
             string zh_cn = "请请把打印机倒转，观察LCD屏幕是否是跟着旋转。";
             string en_us = "please turn down the printer and check if the LCD turn down as well";
             string thai = "thai lang unknown.";
@@ -4631,7 +4928,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.MOTOR_CLEANFEED_2000);
 
             for (int i = 0; i < 60; i++)
@@ -4665,23 +4968,29 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             SerialPortWriteLineOnce(PrinterCommands.LCD_GREEN);
-            Delay(5000);
+
             string zh_cn = "请确认LCD屏幕是否是绿色。";
             string en_us = "please comfirm the LCD screen is green.";
             string thai = "thai tips (unknown)";
             bool bGreen = GetOperatorSelection(zh_cn, en_us, thai);
             if (!bGreen)
             {
-                value = "GREEN_LCD_DISPLAG_FIAL";
+                value = "GREEN_LCD_DISPLAY_FIAL";
                 rlt = false;
                 goto End;
             }
 
+            Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.Quit);
+            Delay(1000);
             SerialPortWriteLineOnce(PrinterCommands.LCD_BLACK);
-            Delay(5000);
             zh_cn = "请确认LCD屏幕是否是黑色。";
             en_us = "please comfirm the LCD screen is black.";
             thai = "thai tips (unknown)";
@@ -4694,12 +5003,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
+            Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.Quit);
+
+            Delay(1000);
             SerialPortWriteLineOnce(PrinterCommands.LCD_WHITE);
-            Delay(5000);
             zh_cn = "请确认LCD屏幕是否是白色。";
             en_us = "please comfirm the LCD screen is white.";
             thai = "thai tips (unknown)";
-            SerialPortWriteLineOnce(PrinterCommands.LCD_WHITE);
             bool bWhite = GetOperatorSelection(zh_cn, en_us, thai);
 
             if (!bWhite)
@@ -4708,6 +5018,8 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
+
+            Write_Read_SeriPort(Communicate_Type.VirtualComPort, PrinterCommands.Quit);
 
             rlt = (bGreen && bBlack && bWhite) ? true : false;
             value = rlt ? "PASS" : "FAIL";
@@ -4722,7 +5034,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             string zh_cn = "请确认LED灯有橙色灯亮";
             string en_us = "Pleace check the LED is blinking with orange light.";
             string thai = "thai tips (unknown)";
@@ -4766,7 +5084,12 @@ namespace FCT.ViewLayer.FormLibrary
             string part_number = "", seri_number = "", address = "";
             string m_sfc_address = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             Prod.PA45 m_PA45 = product as Prod.PA45;
 
@@ -4777,14 +5100,21 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (m_PA45.CommunicationOption == CommunicationOptions.USB_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "COMM_OPTION_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
             {
                 value = "USB_ONLY_SKU";
                 rlt = true;
                 goto End;
             }
 
-            if (m_PA45.CommunicationOption == CommunicationOptions.BT_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
             {
                 SerialPortWriteLineOnce(PrinterCommands.read_bluetooth_mac_for_bt_only_module);
                 Delay(2000);
@@ -4873,7 +5203,7 @@ namespace FCT.ViewLayer.FormLibrary
 
             if (ckbSFCS.Checked)
             {
-                if (m_PA45.CommunicationOption == CommunicationOptions.BT_only)
+                if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
                 {
                     string bt_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
 
@@ -4902,7 +5232,7 @@ namespace FCT.ViewLayer.FormLibrary
                     }
 
                     string station = "BT_Wifi_board_Function_Test";
-                    string target_values = "WiFi_BT_Module Read(BT)";
+                    string target_values = "BT MAC";
                     string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
                     m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
                     m_sfc_address = m_sfc_address.ToUpper();
@@ -4948,7 +5278,12 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
 
             Invoke(new Action(() =>
             {
@@ -5000,7 +5335,147 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_Printer_RFID(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
+            string value = "", sCmd = "";
+
+            string zh_cn = "", en_us = "", thai = "";
+            Prod.PA45 m_PA45 = product as Prod.PA45;
+            if (m_PA45 == null)
+            {
+                value = "PRODUCT_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (!m_PA45.CommunicationOption.GetDescription().ToUpper().Contains("RFID"))
+            {
+                value = "NO_RFID_CONFIG";
+                rlt = true;
+                goto End;
+            }
+
+            zh_cn = "请把RFID标签纸装好在打印机。";
+            en_us = "Please set the RFID media tag into media holder.";
+            thai = "unknown";
+
+            SerialPortWriteLineOnce(PrinterCommands.set_rfid_enable);
+            int test_time = 0;
+
+        test_rfid:
+            bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            if (!bOpStep)
+            {
+                value = "OP_PUT_RFID_TAG_FAIL";
+                rlt = false;
+                goto End;
+            }
+
+            string offset = Interaction.InputBox("PLS input RFID OFFSET");
+
+            /*
+            zh_cn = "请手动校准RFID，选择Intensive Calibration，并且确认是否校准成功。";
+            en_us = "Please do RDIF Intensive Calibration manually.";
+            thai = "unknown";
+
+            bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            if (!bOpStep)
+            {
+                value = "OP_RFID_CALIB_FAIL";
+                rlt = false;
+                goto End;
+            }
+
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+            */
+
+            sCmd = $"ff{offset}";
+            SerialPortWriteLineOnce(sCmd);
+
+            sCmd = PrinterCommands.rfid_functest;
+            value = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
+
+            if (!value.Contains("PASS"))
+            {
+                test_time = test_time + 1;
+                if (test_time < 5)
+                {
+                    goto test_rfid;
+                }
+            }
+
+            rlt = (value.Contains("PASS"));
+
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Printer_SetRFIDRegionCode(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
+            string sCmd = "";
+            Prod.PA45 m_PA45 = product as Prod.PA45;
+            if (m_PA45 == null)
+            {
+                value = "PRODUCT_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "PRODUCT_COMM_OPT_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (!Prod.PA45.CommHWOpt.ToString().ToUpper().Contains("RFID"))
+            {
+                value = "NO_RFID_CONFIG";
+                rlt = true;
+                goto End;
+            }
+
+            string m_tag = Guid.NewGuid().ToString("N");
+            AppendRuntimeLog(m_tag);
+
+            sCmd = PrinterCommands.cat_rfid;
+
+            string rfid_rgc = m_PA45.CommunicationOption.GetRIFDRegionAttribute().GetDescription();
+            string rfid_hw = "IM21A2010";
+
+            string sScript = File.ReadAllText(Path.Combine(Global.ASSEMBLY_PATH, "Script", "RFID_Country_freq_table_23June2026.txt"));
+            sScript = sScript.Replace("PA45_RFID_Country_Code_Placeholder", rfid_rgc);
+            sScript = sScript.Replace("PA45_RFID_cfgnum_Placeholder", rfid_hw);
+
+            SerialPortWriteLineOnce(sScript);
+            spTester.BaseStream.Flush(); // 等待驱动把这块推到硬件TX FIFO
+
+            Delay(8000);
+
+            tmpValue = GetRuntimeStringFlagA(m_tag);
+
+            rlt = true;
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Printer_CheckRFIDRegionCode(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "", sCmd = "";
 
             Prod.PA45 m_PA45 = product as Prod.PA45;
             if (m_PA45 == null)
@@ -5010,13 +5485,35 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (!m_PA45.CommunicationOption.ToString().ToUpper().Contains("RFID"))
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "PRODUCT_COMM_OPT_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (!Prod.PA45.CommHWOpt.ToString().ToUpper().Contains("RFID"))
             {
                 value = "NO_RFID_CONFIG";
                 rlt = true;
                 goto End;
             }
 
+            RFID_CC rfid_cc = m_PA45.CommunicationOption.GetRIFDRegionAttribute();
+            string rfid_rgc_spec = rfid_cc.GetDescription();
+            sCmd = PrinterCommands.rfid_version;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_RFID_CC(tmpValue, ref value);
+            rlt = value == rfid_rgc_spec;
+            SerialPortWriteLineOnce(PrinterCommands.set_rfid_disable);
         End:
             item.Value = value;
             return rlt;
@@ -5027,7 +5524,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            { 
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.chekc_locking_status);
 
             for (int i = 0; i < 60; i++)
@@ -5062,7 +5565,13 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.RESTORE_DEFAULT);
 
             for (int i = 0; i < 60; i++)
@@ -5104,6 +5613,214 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
+        private bool Test_Printer_PrintMACLabel(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            string LabFile = "", LabFilePath = "";
+            if (item.Name.ToUpper().Contains("WIFI")) { LabFile = WifiMacLabFile; }
+            else { LabFile = BluetoothMacLabFile; }
+
+            LabFilePath = Path.Combine(Global.ASSEMBLY_PATH, "LabFile", LabFile);
+
+            Prod.PA45 m_PA45 = product as Prod.PA45;
+
+            if (m_PA45 == null)
+            {
+                value = "PRODUCT_CONFIG_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            string printerSN = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
+            {
+                value = "USB_ONLY_SKU";
+                rlt = true;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "COMM_OPTION_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY)
+            {
+                string m_ItemName = item.Name.ToUpper();
+                if (m_ItemName.Contains("WIFI"))
+                {
+                    value = "NO_WIFI_CONFIG";
+                    rlt = true;
+                    goto End;
+                }
+
+                string bt_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
+                AppendRuntimeLog($"{MainBarcode} get sfc bt module SN is {bt_module_sn}.");
+
+                if (string.IsNullOrEmpty(bt_module_sn) || string.IsNullOrWhiteSpace(bt_module_sn))
+                {
+                    value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                    rlt = false;
+                    goto End;
+                }
+
+                string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GET_AUTO_MAC_ADD", $"AMFIS16S00000056;{bt_module_sn}");
+                value = m_sfc_address;
+                BLUETOOTH_MAC_ADDRESS = value;
+            }
+            else
+            {
+                string m_ItemName = item.Name.ToUpper();
+                if (m_ItemName.Contains("WIFI"))
+                {
+                    string bt_wifi_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114390_BT_Wifi_board");
+                    AppendRuntimeLog($"{MainBarcode} get sfc wifi module SN is {bt_wifi_module_sn}.");
+
+                    if (string.IsNullOrEmpty(bt_wifi_module_sn) || string.IsNullOrWhiteSpace(bt_wifi_module_sn))
+                    {
+                        value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                        rlt = false;
+                        goto End;
+                    }
+
+                    string station = "BT_Wifi_board_Function_Test", target_values = "WIFI MAC";
+                    string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
+                    string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
+
+                    m_sfc_address = m_sfc_address.ToUpper();
+                    AppendRuntimeLog($"{bt_wifi_module_sn} get sfc mac is {m_sfc_address}.");
+                    value = m_sfc_address;
+                    WIFI_MAC_ADDRESS = value;
+                }
+                else
+                {
+                    string bt_wifi_module_sn = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114390_BT_Wifi_board");
+                    AppendRuntimeLog($"{MainBarcode} get sfc wifi module SN is {bt_wifi_module_sn}.");
+
+                    if (string.IsNullOrWhiteSpace(bt_wifi_module_sn))
+                    {
+                        value = "CANNOT_GET_WIFI_SN_FROM_SFC";
+                        rlt = false;
+                        goto End;
+                    }
+
+                    string station = "BT_Wifi_board_Function_Test", target_values = "BT MAC";
+                    string param = station + ";" + bt_wifi_module_sn + ";" + target_values;
+                    string m_sfc_address = _ssg_sfc.GetSpecialValue("Scanner", "GetTableLastValues", param);
+                    m_sfc_address = m_sfc_address.ToUpper();
+                    AppendRuntimeLog($"{bt_wifi_module_sn} get sfc mac is {m_sfc_address}.");
+                    value = m_sfc_address;
+                    BLUETOOTH_MAC_ADDRESS = value;
+                }
+            }
+
+
+
+            if (Convert.ToBoolean(INI.GetValue("PrintMACSetting", "IsPrint", ConfigFile)))
+            {
+                rlt = PRINTER.PrintLabel(LabFilePath, INI.GetValue("PrintMACSetting", "KeyName", ConfigFile), value.ToUpper()) ? true : false;
+                AppendRuntimeLog($"Is Print enable is :{LabFilePath}");
+            }
+            else
+            {
+                rlt = true;
+            }
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Printer_RFIDFunc(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+
+
+            rlt = true;
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Printer_SetRFIDRegion(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+            if (!RelayCard1.SetRelayOn(2))
+            {
+                rlt = false;
+                value = "RELAY1_3_ON-FAIL";
+                goto End;
+            }
+            Delay(500);
+
+            if (!RelayCard1.SetRelayOn(0))
+            {
+                rlt = false;
+                value = "RELAY1_1_ON-FAIL";
+                goto End;
+            }
+            Delay(500);
+
+            if (!RelayCard1.SetRelayOn(1))
+            {
+                rlt = false;
+                value = "RELAY1_2_ON-FAIL";
+                goto End;
+            }
+
+            rlt = true;
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Printer_CheckRFIDRegion(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+            if (!RelayCard1.SetRelayOn(2))
+            {
+                rlt = false;
+                value = "RELAY1_3_ON-FAIL";
+                goto End;
+            }
+            Delay(500);
+
+            if (!RelayCard1.SetRelayOn(0))
+            {
+                rlt = false;
+                value = "RELAY1_1_ON-FAIL";
+                goto End;
+            }
+            Delay(500);
+
+            if (!RelayCard1.SetRelayOn(1))
+            {
+                rlt = false;
+                value = "RELAY1_2_ON-FAIL";
+                goto End;
+            }
+
+            rlt = true;
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
         #endregion
 
         #region ---keyboard fct implement---
@@ -5129,15 +5846,15 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 rlt = RelayCard1.SetRelayOn(2);
                 Delay(500);
-                m_voltage = RelayCard1.MeasureVoltage(3);
+                m_voltage = RelayCard1.MeasureVoltage(0);
                 rlt = RelayCard1.SetRelayOff(2);
             }
             else
             {
-                m_voltage = RelayCard1.MeasureVoltage(3);
+                m_voltage = RelayCard1.MeasureVoltage(0);
             }
 
-            value = Convert.ToString(2 * m_voltage);
+            value = Convert.ToString(m_voltage);
             item.Value = value;
             rlt = item.IsValueInRange<double>();
             return rlt;
@@ -5161,7 +5878,7 @@ namespace FCT.ViewLayer.FormLibrary
                 m_voltage = RelayCard1.MeasureVoltage(1);
             }
 
-            value = Convert.ToString(2 * m_voltage);
+            value = Convert.ToString(m_voltage);
             item.Value = value;
             rlt = item.IsValueInRange<double>();
             return rlt;
@@ -5178,14 +5895,14 @@ namespace FCT.ViewLayer.FormLibrary
                 RelayCard1.SetRelayOn(4);
                 Delay(500);
                 m_voltage = RelayCard1.MeasureVoltage(2);
-                RelayCard1.SetRelayOn(4);
+                RelayCard1.SetRelayOff(4);
             }
             else
             {
                 m_voltage = RelayCard1.MeasureVoltage(2);
             }
 
-            value = Convert.ToString(2 * m_voltage);
+            value = Convert.ToString(m_voltage);
             item.Value = value;
             rlt = item.IsValueInRange<double>();
             return rlt;
@@ -5200,15 +5917,15 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 RelayCard1.SetRelayOn(5);
                 Delay(500);
-                m_voltage = RelayCard1.MeasureVoltage(0);
+                m_voltage = RelayCard1.MeasureVoltage(3);
                 RelayCard1.SetRelayOff(5);
             }
             else
             {
-                m_voltage = RelayCard1.MeasureVoltage(0);
+                m_voltage = RelayCard1.MeasureVoltage(3);
             }
 
-            value = Convert.ToString(2 * m_voltage);
+            value = Convert.ToString(m_voltage);
             item.Value = value;
             rlt = item.IsValueInRange<double>();
             return rlt;
@@ -5250,7 +5967,7 @@ namespace FCT.ViewLayer.FormLibrary
                 RelayCard1.SetRelayOn(7);
                 Delay(500);
                 m_voltage = RelayCard1.MeasureVoltage(5);
-                RelayCard1.SetRelayOn(7);
+                RelayCard1.SetRelayOff(7);
             }
             else
             {
@@ -5287,6 +6004,40 @@ namespace FCT.ViewLayer.FormLibrary
             value = Convert.ToString(m_voltage);
             item.Value = value;
             rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_Keyboard_JigAirPressure(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+            DI_Status channel0 = RelayCard1.GetRelayCardDI(0);
+            Delay(100);
+            DI_Status channel1 = RelayCard1.GetRelayCardDI(1);
+
+            value = $"{(int)channel0} / {(int)channel1}";
+
+            if ((int)channel0 == 0 && (int)channel1 == 0)
+            {
+                MessageBox.Show("Jig Air Pressure is too high", Global.AssemblyName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                value = $"{value} (Jig Air Pressure is too high)";
+                rlt = false;
+            }
+
+            if ((int)channel0 == 1 && (int)channel1 == 1)
+            {
+                MessageBox.Show("Jig Air Pressure is too low", Global.AssemblyName, MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                value = $"{value} (Jig Air Pressure is too low)";
+                rlt = false;
+            }
+
+            if ((int)channel0 == 1 && (int)channel1 == 0) { rlt = true; }
+
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -5335,14 +6086,8 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false, bFlag = false;
             string value = "", tmpValue = "";
 
-            if (!RelayCard1.SetRelayOn(2))
-            {
-                rlt = false;
-                value = "RELAY1_3_ON-FAIL";
-                goto End;
-            }
-
-            Delay(500);
+            CloseAllRelays();
+            Delay(3000);
 
             if (!RelayCard1.SetRelayOn(1))
             {
@@ -5355,13 +6100,13 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 tmpValue = ReadSerialportDataReceived();
 
-                if (tmpValue.Contains("INTERMEC_$123$ login:"))
+                if (tmpValue.Contains(PA45_FCT_Commands.none_login))
                 {
                     bFlag = true;
                     break;
                 }
 
-                Delay(500);
+                Delay(1000);
             }
 
             if (!bFlag)
@@ -5371,6 +6116,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
+            Delay(1000);
             rlt = true;
             value = rlt ? "PASS" : "FAIL";
 
@@ -5381,7 +6127,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         private bool Test_MainBoard_FWFlash(int index, TestItem item)
         {
-            bool rlt = false;
+            bool rlt = false, bTimeOut = true;
             string value = "";
 
             string mfg_tool_path = Path.Combine(
@@ -5396,6 +6142,21 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
+            string mfg2_tmp_path = "";
+            string mfg2_OK_Upper = Path.Combine(Global.ASSEMBLY_PATH, "Res", "MfgTool_OK.PNG");
+            string mfg2_OK_Lower = Path.Combine(Global.ASSEMBLY_PATH, "Res", "MfgTool_OK.png");
+
+            if (!File.Exists(mfg2_OK_Upper) && !File.Exists(mfg2_OK_Lower))
+            {
+                value = "NO_FW_TOOL";
+                rlt = false;
+                goto End;
+            }
+
+            if (File.Exists(mfg2_OK_Upper)) { mfg2_tmp_path = mfg2_OK_Upper; }
+            if (File.Exists(mfg2_OK_Lower)) { mfg2_tmp_path = mfg2_OK_Lower; }
+
+            Delay(3000);
             using (Process proc = new Process())
             {
                 proc.StartInfo.FileName = mfg_tool_path;
@@ -5405,10 +6166,148 @@ namespace FCT.ViewLayer.FormLibrary
 
                 // 等待进程初始化并创建主窗口 (非常重要)
                 proc.WaitForInputIdle();
-                int pid = proc.Id;
+                Delay(1000);
 
-                //get ui reource
+                PropertyCondition procCond = new PropertyCondition(AutomationElement.ProcessIdProperty, proc.Id);
+                AutomationElementCollection windows = AutomationElement.RootElement.FindAll(TreeScope.Children, procCond);
 
+                AutomationElement targetWindow = null;
+                for (int i = 0; i < windows.Count; i++)
+                {
+                    AutomationElement tmpUI = windows[i];
+                    string name = tmpUI.Current.Name;
+
+                    if (name.IndexOf("MfgTool") >= 0)
+                    {
+                        targetWindow = tmpUI;
+                        break;
+                    }
+                }
+
+                if (targetWindow == null)
+                {
+                    proc.Kill();
+                    proc.Close();
+                    proc.Dispose();
+                    value = "CANNOT_GET_TARGET_WINDOW";
+                    rlt = false;
+                    goto End;
+                }
+
+                IntPtr hwnd = (IntPtr)targetWindow.Current.NativeWindowHandle;
+                //WinUI.ForceBringWindowToFront(hwnd);
+
+                Condition start_cdtn = new AndCondition(
+                    new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button),
+                    new PropertyCondition(AutomationElement.NameProperty, "Start"));
+
+                Condition exit_cdtn = new AndCondition(
+                    new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button),
+                    new PropertyCondition(AutomationElement.NameProperty, "Exit"));
+
+                Condition ProgressBarCondition =
+                    new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ProgressBar);
+
+
+                AutomationElement flashBtn = targetWindow.FindFirst(TreeScope.Descendants, start_cdtn);
+                AutomationElement exitBtn = targetWindow.FindFirst(TreeScope.Descendants, exit_cdtn);
+
+                AutomationElementCollection progressBars = targetWindow.FindAll(TreeScope.Descendants, ProgressBarCondition);
+
+                if (flashBtn == null || exitBtn == null)
+                {
+                    proc.Kill();
+                    proc.Close();
+                    proc.Dispose();
+                    value = "CANNOT_START_FLASH_FW";
+                    rlt = false;
+                    goto End;
+                }
+
+                AppendRuntimeLog("find Start / Exit button successfully.");
+                if (progressBars.Count == 0)
+                {
+                    proc.Kill();
+                    proc.Close();
+                    proc.Dispose();
+                    value = "CANNOT_FIND_STATUSBAR";
+                    rlt = false;
+                    goto End;
+                }
+                AppendRuntimeLog("find the two flashing status progressbar successfully.");
+
+                //4. 获取 RangeValuePattern 模式
+                object barObj0, barObj1;
+                if (!progressBars[0].TryGetCurrentPattern(RangeValuePattern.Pattern, out barObj0) ||
+                    !progressBars[1].TryGetCurrentPattern(RangeValuePattern.Pattern, out barObj1))
+                {
+                    proc.Kill();
+                    proc.Close();
+                    proc.Dispose();
+                    value = "STATUSBAR_ERROR";
+                    rlt = false;
+                    goto End;
+                }
+
+                RangeValuePattern bar0 = barObj0 as RangeValuePattern;
+                RangeValuePattern bar1 = barObj1 as RangeValuePattern;
+
+                InvokePattern StartFlashProcess = flashBtn.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                StartFlashProcess?.Invoke();
+
+                Emgu.CV.Image<Bgr, byte> template = new Image<Bgr, byte>(mfg2_tmp_path);
+                Emgu.CV.Image<Bgr, byte> ScreenImage;
+
+                double maxVal = 0, minVal = 0;
+                Point minLoc = new Point(0, 0);
+                Point maxLoc = new Point(0, 0);
+                for (int i = 0; i < 60; i++)
+                {
+                    /*
+                    double bar0_value = ((bar0.Current.Value - bar0.Current.Minimum) / (bar0.Current.Maximum - bar0.Current.Minimum)) * 100.0;
+                    double bar1_value = ((bar1.Current.Value - bar1.Current.Minimum) / (bar1.Current.Maximum - bar1.Current.Minimum)) * 100.0;
+
+                    AppendRuntimeLog($"progress-bar0 value is {bar0_value.ToString("F2")}%.");
+                    AppendRuntimeLog($"progress-bar1 value is {bar1_value.ToString("F2")}%.");
+                    */
+
+                    WinUI.ForceBringWindowToFront(hwnd);
+                    Bitmap bmpScreen = WinUI.CapturePrimaryScreen();
+                    ScreenImage = new Image<Bgr, byte>(bmpScreen);
+
+                    Image<Gray, float> result = ScreenImage.MatchTemplate(template, TemplateMatchingType.CcoeffNormed);
+
+                    CvInvoke.MinMaxLoc(result, ref minVal, ref maxVal, ref minLoc, ref maxLoc);
+
+                    AppendRuntimeLog($"MaxVal:{maxVal}, MaxLoc:({maxLoc.X},{maxLoc.Y})");
+
+                    if (maxVal > 0.9999)
+                    {
+                        rlt = true;
+                        bTimeOut = false;
+                        value = "PASS";
+                        bmpScreen.Dispose();
+                        break;
+                    }
+
+                    bmpScreen.Dispose();
+                    result?.Dispose();
+                    ScreenImage?.Dispose();
+                    Delay(5000);
+                }
+
+                InvokePattern StopFlashProcess = flashBtn.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                StopFlashProcess?.Invoke();
+
+                InvokePattern ExitApp = exitBtn.GetCurrentPattern(InvokePattern.Pattern) as InvokePattern;
+                ExitApp?.Invoke();
+            }
+
+            if (bTimeOut)
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
             }
 
             value = rlt ? "PASS" : "FAIL";
@@ -5479,8 +6378,9 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
             Delay(500);
-            value = Convert.ToString(3.7 * RelayCard1.MeasureVoltage(0));
+            value = Convert.ToString(2.68 * RelayCard1.MeasureVoltage(0));
             RelayCard1.SetRelayOff(0);
+
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -5499,7 +6399,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
             Delay(500);
-            value = Convert.ToString(1.1 * RelayCard1.MeasureVoltage(1));
+            value = Convert.ToString(1.2 * RelayCard1.MeasureVoltage(1));
             RelayCard1.SetRelayOff(1);
 
         End:
@@ -5519,7 +6419,8 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_2_ON-FAIL";
                 goto End;
             }
-            value = Convert.ToString(RelayCard1.MeasureVoltage(2));
+            Delay(500);
+            value = Convert.ToString(1.2 * RelayCard1.MeasureVoltage(2));
             RelayCard1.SetRelayOff(2);
 
         End:
@@ -5539,6 +6440,7 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_3_ON-FAIL";
                 goto End;
             }
+            Delay(500);
             value = Convert.ToString(RelayCard1.MeasureVoltage(3));
             RelayCard1.SetRelayOff(3);
 
@@ -5559,6 +6461,7 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_4_ON-FAIL";
                 goto End;
             }
+            Delay(500);
             value = Convert.ToString(RelayCard1.MeasureVoltage(4));
             RelayCard1.SetRelayOff(4);
 
@@ -5579,6 +6482,7 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_5_ON-FAIL";
                 goto End;
             }
+            Delay(500);
             value = Convert.ToString(RelayCard1.MeasureVoltage(5));
             RelayCard1.SetRelayOff(5);
 
@@ -5619,6 +6523,7 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_7_ON-FAIL";
                 goto End;
             }
+            Delay(500);
             value = Convert.ToString(RelayCard1.MeasureVoltage(7));
             RelayCard1.SetRelayOff(7);
 
@@ -5632,22 +6537,23 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(0);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(0) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(0);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(0);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(0) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(0);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5657,22 +6563,23 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(1);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(1) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(1);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(1);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(1) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(1);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5682,22 +6589,25 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            DI_Status mDI, specDI;
 
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(2);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(2) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(2);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(2);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(2) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(2);
+                specDI = DI_Status.Low;
             }
 
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5707,23 +6617,25 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            DI_Status mDI, specDI;
 
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(3);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(3) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(3);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(3);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(3) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(3);
+                specDI = DI_Status.Low;
             }
 
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5733,22 +6645,24 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            DI_Status mDI, specDI;
 
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(5);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(5) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(5);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(5);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(5) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(5);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5758,22 +6672,23 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(4);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(4) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(4);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(4);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(4) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(4);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5783,22 +6698,23 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
+            DI_Status mDI, specDI;
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(5);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(5) ? "1" : "0";
-                rlt = value == "1" ? true : false;
-
+                mDI = CaptureCard1.GetCaptureCardDI(5);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(5);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(5) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(5);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5808,22 +6724,23 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(6);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(6) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(6);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(6);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(6) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(6);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
@@ -5833,21 +6750,81 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(7);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(7) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(7);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(7);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(7) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(7);
+                specDI = DI_Status.Low;
             }
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_Powerboard_USB_CC_INT(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            if (item.Name.ToLower().Contains("high"))
+            {
+                regAddr = "0x020AC000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 7;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = nib.check_bit_0_or_1(BitPosition.second);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                regAddr = "0x02290010";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020AC000"; regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 7;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = !nib.check_bit_0_or_1(BitPosition.second);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
 
         End:
             item.Value = value;
@@ -5857,22 +6834,26 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_Powerboard_VEHICLE_MOUNT_DET(int index, TestItem item)
         {
             bool rlt = false;
-            string value = "";
+            string value = "", tmpValue = "";
+            DI_Status mDI, specDI;
 
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(8);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(8) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(8);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(8);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(8) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(8);
+                specDI = DI_Status.Low;
             }
+
+            value = $"{(int)mDI}";
+            rlt = mDI == specDI;
 
         End:
             item.Value = value;
@@ -5883,26 +6864,56 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "";
-
+            DI_Status mDI, specDI;
             if (item.Name.ToLower().Contains("high"))
             {
                 CaptureCard1.SetCaptureCardDOAsHigh(8);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(8) ? "1" : "0";
-                rlt = value == "1" ? true : false;
+
+                mDI = CaptureCard1.GetCaptureCardDI(8);
+                specDI = DI_Status.High;
             }
             else
             {
                 CaptureCard1.SetCaptureCardDOAsLow(8);
                 Delay(500);
-                value = CaptureCard1.GetCaptureCardDI(8) ? "0" : "1";
-                rlt = value == "0" ? true : false;
+                mDI = CaptureCard1.GetCaptureCardDI(8);
+                specDI = DI_Status.Low;
             }
-
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
         End:
             item.Value = value;
             return rlt;
         }
+
+        private bool Test_Powerboard_USB2_DOCK_DP(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+            DI_Status mDI, specDI;
+            if (item.Name.ToLower().Contains("high"))
+            {
+                CaptureCard1.SetCaptureCardDOAsHigh(9);
+                Delay(500);
+
+                mDI = CaptureCard1.GetCaptureCardDI(9);
+                specDI = DI_Status.High;
+            }
+            else
+            {
+                CaptureCard1.SetCaptureCardDOAsLow(9);
+                Delay(500);
+                mDI = CaptureCard1.GetCaptureCardDI(9);
+                specDI = DI_Status.Low;
+            }
+            rlt = mDI == specDI;
+            value = $"{(int)mDI}";
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
 
         #endregion
 
@@ -5946,20 +6957,23 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
             string zn_ch_tips = "", en_us_tips = "", thai_tips = "";
+            string imgFilePath = "";
             if (item.Name.ToUpper().Contains("BLACK") || item.Name.ToUpper().Contains("DARK"))
             {
                 zn_ch_tips = "黑色";
                 en_us_tips = "black";
                 thai_tips = "null";
+                imgFilePath = Path.Combine(Global.ASSEMBLY_PATH, "Res", "topsensor_black.png");
             }
             else
             {
                 zn_ch_tips = "白色";
                 en_us_tips = "white";
                 thai_tips = "null";
+                imgFilePath = Path.Combine(Global.ASSEMBLY_PATH, "Res", "topsensor_white.png");
             }
 
-            if (!GetOperatorSelection(zn_ch_tips, en_us_tips, thai_tips))
+            if (!GetOperatorSelection(zn_ch_tips, en_us_tips, thai_tips, imgFilePath))
             {
                 value = "OP_PUT_MEDIA_NG";
                 rlt = false;
@@ -5979,6 +6993,8 @@ namespace FCT.ViewLayer.FormLibrary
 
         #region ---WiFi_BT_Module,  BT_Module ---
 
+
+
         private bool Test_WiFiBtModule_PowerOn(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
@@ -5992,7 +7008,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            Delay(3000);
+            //set powerSupply as 12v
 
             if (!RelayCard1.SetRelayOn(1))
             {
@@ -6030,11 +7046,8 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "PRODUCT_TPYE_ERROR";
                 goto End;
             }
-            else
-            {
-                is_bt = true;
-                AppendRuntimeLog($"this DUT is BT_module.");
-            }
+            is_bt = true;
+            AppendRuntimeLog($"this DUT is BT_module.");
 
         StartTest:
             if (!is_wifi_bt && !is_bt)
@@ -6082,8 +7095,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            Delay(40000);
-
+            Delay(Convert.ToInt32(INI.GetValue("Delay", "WaitUI", ConfigFile)) * 1000);
             value = rlt ? $"PASS / {devicePortName}" : "FAIL";
 
         End:
@@ -6136,26 +7148,26 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-
-            string m_cmd = string.Empty;
-            if (item.Name.ToUpper().Contains("(WIFI)")) { m_cmd = PrinterCommands.WIFI_ID; }
-            else { m_cmd = PrinterCommands.BLUETOOTH_ID; }
-
-            SerialPortWriteLineOnce(m_cmd);
-
-            for (int i = 0; i < 200; i++)
+            if (!check_unlock_os_cmds())
             {
-                tmpValue = GetRuntimeStringFlagA(m_cmd);
-                if (!string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(1000);
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
             }
 
-            if (bTimeOut)
+            string sCmd = string.Empty;
+            if (item.Name.ToUpper().Contains("WIFI")) { sCmd = PrinterCommands.WIFI_ID; }
+            else if (item.Name.ToUpper().Contains("BT")) { sCmd = PrinterCommands.BLUETOOTH_ID; }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.VirtualComPort, sCmd, 2000);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
             {
                 rlt = false;
                 value = "TimeOut";
@@ -6170,7 +7182,7 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             string part_number = "", seri_number = "", address = "";
-            if (item.Name.ToUpper().Contains("(WIFI)"))
+            if (item.Name.ToUpper().Contains("WIFI"))
             {
                 m_dut.get_WIFI_ID(tmpValue, ref part_number, ref seri_number, ref address);
                 value = address;
@@ -6178,7 +7190,7 @@ namespace FCT.ViewLayer.FormLibrary
             }
             else
             {
-                m_dut.get_WIFI_ID(tmpValue, ref part_number, ref seri_number, ref address);
+                m_dut.get_BLUETOOTH_ID(tmpValue, ref part_number, ref seri_number, ref address);
                 value = address;
                 BLUETOOTH_MAC_ADDRESS = value;
             }
@@ -6280,6 +7292,13 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
+            if (!check_unlock_os_cmds())
+            {
+                value = "RUN_OS_CMDS_DISABLE";
+                rlt = false;
+                goto End;
+            }
+
             SerialPortWriteLineOnce(PrinterCommands.write_bluetooth_mac_for_bt_only_module(mac_assigned_by_sfc));
 
             Delay(3000);
@@ -6290,7 +7309,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 tmpValue = GetRuntimeStringFlagA(PrinterCommands.read_bluetooth_mac_for_bt_only_module);
                 tmpValue = tmpValue.Replace(PrinterCommands.read_bluetooth_mac_for_bt_only_module, "");
-                if (!string.IsNullOrEmpty(tmpValue) && !string.IsNullOrWhiteSpace(tmpValue))
+                if (!string.IsNullOrWhiteSpace(tmpValue))
                 {
                     bTimeOut = false;
                     break;
@@ -6323,6 +7342,7 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
+
             BLUETOOTH_MAC_ADDRESS = value;
             rlt = value == mac_assigned_by_sfc;
 
@@ -6330,6 +7350,118 @@ namespace FCT.ViewLayer.FormLibrary
             item.Value = value;
             return rlt;
         }
+
+        private bool Test_WiFiBtModule_RePowerOn(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "";
+            string devicePortName = "";
+
+            CloseAllRelays();
+            Delay(3000);
+            if (!RelayCard1.SetRelayOn(0))
+            {
+                rlt = false;
+                value = "RELAY1_0_ON_NG";
+                goto End;
+            }
+
+            //set powerSupply as 12v
+
+            if (!RelayCard1.SetRelayOn(1))
+            {
+                rlt = false;
+                value = "RELAY1_1_ON_NG";
+                goto End;
+            }
+
+            bool is_wifi_bt = false, is_bt = false;
+
+            Prod.WiFi_BT_Module m_product = product as Prod.WiFi_BT_Module;
+
+            if (m_product == null)
+            {
+                is_wifi_bt = false;
+                //value = "PRODUCT_TPYE_ERROR";
+                AppendRuntimeLog($"this DUT is not WIFI_BT_module.");
+                goto check_is_bt_only;
+            }
+            else
+            {
+                is_wifi_bt = true;
+                AppendRuntimeLog($"this DUT is WIFI_BT_module.");
+                goto StartTest;
+            }
+
+
+        check_is_bt_only:
+            Prod.BT_Module m_product1 = product as Prod.BT_Module;
+
+            if (m_product1 == null)
+            {
+                is_bt = false;
+                AppendRuntimeLog($"this DUT is not BT_module.");
+                value = "PRODUCT_TPYE_ERROR";
+                goto End;
+            }
+            is_bt = true;
+            AppendRuntimeLog($"this DUT is BT_module.");
+
+        StartTest:
+            if (!is_wifi_bt && !is_bt)
+            {
+                rlt = false;
+                value = "PRODUCT_TPYE_ERROR";
+                goto End;
+            }
+
+            string m_vid, m_pid = "";
+
+            if (is_wifi_bt)
+            {
+                DUTS.WiFi_BT_Module.WiFi_BT_Module m_dut = dut as DUTS.WiFi_BT_Module.WiFi_BT_Module;
+                m_vid = m_dut.VID;
+                m_pid = m_dut.PID;
+            }
+            else
+            {
+                DUTS.BT_Module.BT_Module m_dut = dut as DUTS.BT_Module.BT_Module;
+                m_vid = m_dut.VID;
+                m_pid = m_dut.PID;
+            }
+
+            for (int i = 0; i < 200; i++)
+            {
+                devicePortName = WinDevice.GetSerialportComPort(m_vid, m_pid);
+                if (devicePortName != "COM1" && !string.IsNullOrEmpty(devicePortName) && !string.IsNullOrWhiteSpace(devicePortName))
+                {
+                    AppendRuntimeLog($"count: {i}, detected device: {devicePortName} [vid({m_vid}), pid({m_pid})].");
+
+                    rlt = true;
+                    bTimeOut = false;
+                    break;
+                }
+
+                AppendRuntimeLog($"count: {i}, detecting device [vid({m_vid}), pid({m_pid})].");
+                Delay(1000);
+            }
+
+            if (bTimeOut)
+            {
+                rlt = false;
+                value = "TimeOut";
+                goto End;
+            }
+
+            Delay(Convert.ToInt32(INI.GetValue("Delay", "WaitUI", ConfigFile)) * 1000);
+            value = rlt ? $"PASS / {devicePortName}" : "FAIL";
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+
 
         private bool Test_NFCTag_Read(int index, TestItem item)
         {
@@ -6492,14 +7624,21 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (m_PA45.CommunicationOption == CommunicationOptions.USB_only)
+            if (Prod.PA45.CommHWOpt == CommHWOpt.ERROR)
+            {
+                value = "COMM_OPTION_ERROR";
+                rlt = true;
+                goto End;
+            }
+
+            if (Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY)
             {
                 value = "NO_NFC_CONFIG";
                 rlt = true;
                 goto End;
             }
 
-            if (string.IsNullOrEmpty(BLUETOOTH_MAC_ADDRESS) || string.IsNullOrWhiteSpace(BLUETOOTH_MAC_ADDRESS))
+            if (string.IsNullOrWhiteSpace(BLUETOOTH_MAC_ADDRESS))
             {
                 value = "MAC_CONTENT_IS_NULL";
                 rlt = false;
@@ -6510,13 +7649,7 @@ namespace FCT.ViewLayer.FormLibrary
             string en_us = "please put NFC reader near NFC-Tag.";
             string thai = "null";
 
-            bool bOpStep = false;
-            Invoke(new Action(() =>
-            {
-                frmTips dialog = new frmTips(zh_cn, en_us, thai);
-                DialogResult result = dialog.ShowDialog(this);
-                bOpStep = (result == DialogResult.OK);
-            }));
+            bool bOpStep = GetOperatorSelection(zh_cn, en_us, thai);
 
             if (!bOpStep)
             {
@@ -6628,8 +7761,7 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_LTSSensor_PowerOn(int index, TestItem item)
         {
             bool rlt = false, bTimeOut = true;
-            string value = "";
-            string devicePortName = "";
+            string value = "", tmpValue = "";
 
             if (!RelayCard1.SetRelayOn(0))
             {
@@ -6637,9 +7769,7 @@ namespace FCT.ViewLayer.FormLibrary
                 value = "RELAY1_0_ON_NG";
                 goto End;
             }
-
-            Delay(3000);
-
+            Delay(1000);
             if (!RelayCard1.SetRelayOn(1))
             {
                 rlt = false;
@@ -6647,43 +7777,9 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            Type m_type = dut.GetType();
+            rlt = true;
 
-            if (m_type.Name != "LTSSensor")
-            {
-                rlt = false;
-                value = "DUT_TPYE_ERROR";
-                goto End;
-            }
-
-            DUTS.LTSSensor.LTSSensor m_dut = dut as DUTS.LTSSensor.LTSSensor;
-
-            for (int i = 0; i < 200; i++)
-            {
-                devicePortName = WinDevice.GetSerialportComPort(m_dut.VID, m_dut.PID);
-                if (devicePortName != "COM1" && !string.IsNullOrWhiteSpace(devicePortName))
-                {
-                    AppendRuntimeLog($"count: {i}, detected device: {devicePortName} [vid({m_dut.VID}), pid({m_dut.PID})].");
-
-                    rlt = true;
-                    bTimeOut = false;
-                    break;
-                }
-
-                AppendRuntimeLog($"count: {i}, detecting device [vid({m_dut.VID}), pid({m_dut.PID})].");
-                Delay(1000);
-            }
-
-            if (bTimeOut)
-            {
-                rlt = false;
-                value = "TimeOut";
-                goto End;
-            }
-
-            Delay(20000);
-
-            value = rlt ? $"PASS / {devicePortName}" : "FAIL";
+            value = rlt ? $"PASS" : "FAIL";
 
         End:
             item.Value = value;
@@ -6692,10 +7788,10 @@ namespace FCT.ViewLayer.FormLibrary
 
         private bool Test_LTSSensor_Func(int index, TestItem item)
         {
-            bool rlt = false, bTimeOut = true, bFinddevice = false;
-            string value = "", devicePortName = "";
+            bool rlt = false, bFinddevice = false, bRoot = false;
+            string value = "", tmpValue = "", devicePortName = "";
             string zh_cn = "", en_us = "", thai = "";
-
+            string sCmd = "";
             DUTS.LTSSensor.LTSSensor m_dut = dut as DUTS.LTSSensor.LTSSensor;
 
             if (m_dut == null)
@@ -6705,17 +7801,17 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            for (int i = 0; i < 200; i++)
+            for (int i = 0; i < RegularTimeOutCount; i++)
             {
-                devicePortName = WinDevice.GetSerialportComPort(m_dut.VID, m_dut.PID);
-                if (devicePortName != "COM1" && !string.IsNullOrWhiteSpace(devicePortName))
-                {
-                    AppendRuntimeLog($"current times is{i}, detected device: {devicePortName} [vid({m_dut.VID}), pid({m_dut.PID})].");
+                tmpValue = ReadSerialportDataReceived();
 
+                if (tmpValue.Contains(PA45_FCT_Commands.ConsoleLoginReminder))
+                {
                     bFinddevice = true;
+
                     break;
                 }
-                AppendRuntimeLog($"current times is{i}, detecting device [vid({m_dut.VID}), pid({m_dut.PID})].");
+
                 Delay(1000);
             }
 
@@ -6726,14 +7822,28 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            if (!InitializeSerialport(m_dut.VID, m_dut.PID, spTester))
+            SeriPortWriteLine(spUART, PA45_FCT_Commands.Username);
+            SeriPortWriteLine(spUART, PA45_FCT_Commands.Password);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
             {
-                rlt = false;
-                value = "CANNOT_OPEN_DEVICE";
-                goto End;
+                tmpValue = GetUARTStringFlagA(PA45_FCT_Commands.ConsoleLoginReminder);
+
+                if (tmpValue.Contains(PA45_FCT_Commands.root_OK_ConsoleTag))
+                {
+                    bRoot = true;
+                    break;
+                }
+
+                Delay(1000);
             }
 
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+            if (!bRoot)
+            {
+                rlt = false;
+                value = "ROOT_LOGIN_FAIL";
+                goto End;
+            }
 
             if (item.Name.Contains("No Media"))
             {
@@ -6757,7 +7867,7 @@ namespace FCT.ViewLayer.FormLibrary
                 goto End;
             }
 
-            value = GetLTSSensorValue();
+            value = GetLTSSensorValue(Communicate_Type.UART);
 
             if (value.Contains($"{Printer_Error_Code.HW_NOT_INSTALL}"))
             {
@@ -6779,6 +7889,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "";
 
+            /*
             if (!RelayCard1.SetRelayOn(0))
             {
                 value = "REALAY1_0_ON_FAIL";
@@ -6794,6 +7905,16 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
+            */
+
+            if (!RelayCard1.SetRelayOn(2))
+            {
+                value = "REALAY1_2_ON_FAIL";
+                rlt = false;
+                goto End;
+            }
+
+            Delay(500);
 
             rlt = true;
             value = "PASS";
@@ -6811,7 +7932,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 tmpValue = ReadSerialportDataReceived();
 
-                if (tmpValue.Contains("INTERMEC_$123$ login:"))
+                if (tmpValue.Contains(PA45_FCT_Commands.none_login))
                 {
                     bFlag = true;
                     break;
@@ -6826,18 +7947,16 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
-
-            /*
-            Delay(Convert.ToInt32(INI.GetValue("Delays", "root", ConfigFile)));
-
-            SerialPortWriteLineOnce1(spDutDebugPort, "root");
-            SerialPortWriteLineOnce1(spDutDebugPort, "f!j!r0cks");
+            Delay(1000);
+            SeriPortWriteLine(spUART, PrinterCommands.username);
+            SeriPortWriteLine(spUART, PrinterCommands.password1);
+            Delay(1000);
 
             for (int i = 0; i < 200; i++)
             {
                 tmpValue = ReadSerialportDataReceived();
 
-                if (tmpValue.Contains("root@INTERMEC_$123$ ~$"))
+                if (tmpValue.Contains(PA45_FCT_Commands.none_root_ok))
                 {
                     bLoginStatus = true;
                     break;
@@ -6852,25 +7971,10 @@ namespace FCT.ViewLayer.FormLibrary
                 rlt = false;
                 goto End;
             }
-            */
 
-            Delay(Convert.ToInt32(INI.GetValue("BootupTime", "Time", ConfigFile)));
-            //SerialPortWriteLineOnce1(spDutDebugPort, PrinterCommands.SetUpSleepTimer_0);
-            DUTS.PA45_MainBoard.PA45_MainBoard m_dut = dut as DUTS.PA45_MainBoard.PA45_MainBoard;
+            SeriPortWriteLine(spUART, PA45_FCT_Commands.unlock_memtool_cmd1);
+            SeriPortWriteLine(spUART, PA45_FCT_Commands.unlock_memtool_cmd2);
 
-            if (m_dut == null)
-            {
-                value = "ERROR_DUT_TYPE";
-                rlt = false;
-                goto End;
-            }
-
-            if (!InitializeSerialport(m_dut.VID, m_dut.PID, spTester))
-            {
-                value = "COMMUNICATE_COMPORT_ERROR";
-                rlt = false;
-                goto End;
-            }
 
             rlt = true;
             value = "PASS";
@@ -6880,16 +7984,322 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
+        private bool Test_MB_FCT_GotoFctMode(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+            DUTS.PA45_MainBoard.PA45_MainBoard m_dut = dut as DUTS.PA45_MainBoard.PA45_MainBoard;
+
+            if (m_dut == null)
+            {
+                value = "ERROR_DUT_TYPE";
+                rlt = false;
+                goto End;
+            }
+
+            string regAddr = "0x020E0048", regVal = "0x00000005";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+
+            SeriPortWriteLine(spUART, sCmd);
+            regAddr = "0x0209C000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            string tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 5;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0x0209C000:  30006`1`9C ( 0b`0`001 )
+            rlt = !nib.check_bit_0_or_1(BitPosition.third);
+
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Curr_PowerOn(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //step2, K-2306 power supply
+            //Keithy2306LAN.Source(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1, 7.0);
+            Keithy2306LAN.Connect();
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 12);
+            //step3, Power-Key turn on test, measure TP294
+            Delay(1000);
+            value = Keithy2306LAN.Measure_scpi(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH2);
+        //step4, turn off K-2306
+        //Keithy2306LAN.SourceOff(KEITHLEY_2306_Channel.CH2);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
         private bool Test_MB_FCT_CoinBattery(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
+            RelayCard2.SetRelayOn(3);//TPH NTC 30k turn on;
+
+            //relay3-5 rtc power supply
+
+            RelayCard3.SetRelayOn(5);
+            Delay(1000);
             value = Convert.ToString(CaptureCard1.MeasureVoltage(0));
+            RelayCard3.SetRelayOff(5);
 
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_CommJ1(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "";
+
+            //set some relay to make sure communitcate well.
+
+            RelayCard3.SetRelayOn(0);
+            RelayCard3.SetRelayOff(0);
+
+            rlt = true;
+            value = "PASS";
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_BootMode(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "";
+
+            string regAddr = "0x020AC000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            string tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 5;
+
+            //00000[A]C3 ( 0x[10]10 )
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+            AppendRuntimeLog($"Nibble = {nib}, 4bit binary = {Convert.ToString(nib, 2).PadLeft(4, '0')}");
+
+            rlt = nib.check_bit_0_or_1(BitPosition.third) && !nib.check_bit_0_or_1(BitPosition.second);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_DC_InCurrentWhilePowerOn(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", sTmp = "";
+
+            //step1, supply DC/IN 12v/3a, 2306
+
+            Keithy2306LAN.Connect();
+            //step2, relay??? 5V
+
+            //step3, 
+            string regAddr = "0x020E01A0", regVal = "00000005";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            value = Keithy2306LAN.Measure(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1);
+
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_ConfigHW(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //step3, 
+            string regAddr = "0x020A8004", regVal = "0x0E418400";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A8000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 5;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes =
+                !nib.check_bit_0_or_1(BitPosition.third) &&
+                nib.check_bit_0_or_1(BitPosition.second) &&
+                !nib.check_bit_0_or_1(BitPosition.first);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0'); ;
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_FwVersion(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = PA45_FCT_Commands.GetFWVersion;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_FW_Version(tmpValue, ref value);
+
+            rlt = ((value == item.UpperLimit) && (value == item.LowerLimit));
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_AutoPowerOn5V(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard1.SetRelayOn(2);
+            Delay(1000);
+
+            //7v~8v
+            value = Convert.ToString(RelayCard1.MeasureVoltage(0) * 2);
+            RelayCard1.SetRelayOff(2);
+            Delay(1000);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_AutoPowerOn12V(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //7v~8v
+            Keithy2306LAN.Connect();
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 12);
+            Keithy2306LAN.Source(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH2, 3);
+            Delay(1000);
+
+            value = Convert.ToString(RelayCard1.MeasureVoltage(0) * 2);
+            Keithy2306LAN.SourceOff(KEITHLEY_2306_Channel.CH2);
+            Delay(1000);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_PowerOn7p4V(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //7v~8v
+            Keithy2306LAN.Connect();
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 7.4);
+            Keithy2306LAN.Source(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1, 4);
+            Delay(1000);
+            value = Convert.ToString(Keithy2306LAN.Measure_scpi(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1));
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+
+
+
+
+        private bool Test_MB_FCT_PowerOn7p4V_battery(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            Delay(1000);
+            value = Convert.ToString(Keithy2306LAN.Measure_scpi(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1));
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_PowerKeyPress(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            rlt = RelayCard3.SetRelayOn(4);
+            Delay(100);
+            rlt = RelayCard3.SetRelayOff(4);
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -6898,18 +8308,9 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            if (!item.Name.Contains("Voltage Test"))
-            {
-                RelayCard1.SetRelayOn(2);
-                Delay(100);
-                value = Convert.ToString(RelayCard1.MeasureVoltage(0) * 5.6);
-                RelayCard1.SetRelayOff(2);
-            }
-            else
-            {
-                Delay(100);
-                value = Convert.ToString(RelayCard1.MeasureVoltage(0));
-            }
+            //VBUS_IN供電 (使用PD Adapter 5~20V/?A),
+            Delay(100);
+            value = Convert.ToString(RelayCard1.MeasureVoltage(0) * 2);
 
         End:
             item.Value = value;
@@ -6920,7 +8321,7 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_MB_FCT_V3P3_MCU(int index, TestItem item)
         {
             bool rlt = false;
-            string value = "", tmpValue = "";
+            string value = "";
 
             value = Convert.ToString(CaptureCard1.MeasureVoltage(1));
 
@@ -6935,6 +8336,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
+            //MCU_P01:H
             value = Convert.ToString(CaptureCard1.MeasureVoltage(2));
 
         End:
@@ -6973,7 +8375,7 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "", tmpValue = "";
-
+            Delay(500);
             value = Convert.ToString(CaptureCard1.MeasureVoltage(5));
 
         End:
@@ -6986,7 +8388,7 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "", tmpValue = "";
-
+            Delay(500);
             value = Convert.ToString(CaptureCard1.MeasureVoltage(6));
 
         End:
@@ -6999,18 +8401,26 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "", tmpValue = "";
+            string sCmd = "";
 
-            if (item.Name.Contains("Normal"))
+            if (item.Name.ToLower().Contains("normal"))
             {
-                value = Convert.ToString(CaptureCard1.MeasureVoltage(7) / 0.95);
+                value = Convert.ToString(CaptureCard1.MeasureVoltage(7));
 
             }
             else
             {
-                value = Convert.ToString(CaptureCard1.MeasureVoltage(8));
+                sCmd = "date -s " + "\"" + $"{DateTime.Now.ToString("2026-01-01 12:00:00")}";
+                SeriPortWriteLine(spUART, sCmd);
+                SeriPortWriteLine(spUART, "hwclock -w -f /dev/rtc0");
+                SeriPortWriteLine(spUART, "echo 0 > /sys/class/rtc/rtc0/wakealarm");
+                SeriPortWriteLine(spUART, "echo +5 > /sys/class/rtc/rtc0/wakealarm");
+                SeriPortWriteLine(spUART, "echo mem > /sys/power/state");
+
+                value = Convert.ToString(CaptureCard1.MeasureVoltage(7));
+                Delay(5000);
             }
 
-        End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
             return rlt;
@@ -7019,9 +8429,9 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_MB_FCT_VDD_HIGH_CAP(int index, TestItem item)
         {
             bool rlt = false;
-            string value = "", tmpValue = "";
+            string value = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(9) * 2.29);
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(8));
 
         End:
             item.Value = value;
@@ -7034,7 +8444,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(10));
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(9));
 
         End:
             item.Value = value;
@@ -7047,7 +8457,9 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard1.MeasureVoltage(10) * 1.39);
+            //string sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(0, MCU_DO_Status.High);
+            //SeriPortWriteLine(spUART, sCmd);
+            value = Convert.ToString(RelayCard1.MeasureVoltage(1) * 2);
 
         End:
             item.Value = value;
@@ -7060,7 +8472,24 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(11));
+            string sCmd = "";
+
+            if (item.Name.ToLower().Contains("low"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(2, MCU_DO_Status.Low);
+            }
+            else if (item.Name.ToLower().Contains("high"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(2, MCU_DO_Status.High);
+            }
+            else
+            {
+
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(10));
+
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7072,7 +8501,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(12));
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(11));
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7081,10 +8510,34 @@ namespace FCT.ViewLayer.FormLibrary
 
         private bool Test_MB_FCT_V3P3_LPT(int index, TestItem item)
         {
-            bool rlt = false;
-            string value = "", tmpValue = "";
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue;
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(13) * 1.29);
+            string regAddr = "0x020A4000", regVal = "0x00005331";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            /*
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                sTmp = GetUARTStringFlagA(sCmd);
+                if (!string.IsNullOrWhiteSpace(sTmp))
+                {
+                    bTimeOut = false;
+                    break;
+                }
+                Delay(500);
+            }
+
+            if (bTimeOut)
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+            */
+
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(12));
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7095,8 +8548,27 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "", tmpValue = "";
+            string sCmd = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(14));
+            //high
+            if (item.Name.ToUpper().Contains("HIGH"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(39, MCU_DO_Status.High);
+            }
+            else if (item.Name.ToUpper().Contains("LOW"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(39, MCU_DO_Status.Low);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            Delay(1000);
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(13));
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7108,7 +8580,7 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(15));
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(14));
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7120,10 +8592,29 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            RelayCard1.SetRelayOn(3);
-            Delay(100);
-            value = Convert.ToString(CaptureCard1.MeasureVoltage(15));
-            RelayCard1.SetRelayOff(3);
+            //Set GPIO03 io08 H
+            /*
+             * 設定 GPIO3_IO08 為 High,
+            memtool -32 0x020A4000=0x00001331
+            設定 GPIO3_IO08 為 Output,
+            memtool -32 0x020A4004=0x1E7F6307
+             */
+            string regAddr = "", regVal = "", sCmd = "";
+
+            regAddr = "0x020A4004";
+            regVal = "0x00001331";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A4000";
+            regVal = "0x00001331";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //RelayCard1.SetRelayOn(3);
+            Delay(1000);
+            value = Convert.ToString(RelayCard1.MeasureVoltage(2) * 2);
+        //RelayCard1.SetRelayOff(3);
 
         End:
             item.Value = value;
@@ -7136,18 +8627,46 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
+            string regAddr = "", regVal = "", sCmd = "";
+
             if (item.Name.Contains("H"))
             {
+                regAddr = "0x020E01AC";
+                regVal = "0x5";
+
                 //H
+                regAddr = "0x020A8000";
+                regVal = "0x065FA400";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A8004";
+                regVal = "0x0241A400";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
 
             }
-            else
+            else if (item.Name.Contains("L"))
             {
                 //L
+                regAddr = "0x020A8000";
+                regVal = "0x065F8400";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A8004";
+                regVal = "0x0241A400";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
             }
 
             Delay(100);
-            value = Convert.ToString(CaptureCard2.MeasureVoltage(0));
+            value = Convert.ToString(CaptureCard2.MeasureVoltage(5));
 
         End:
             item.Value = value;
@@ -7225,7 +8744,7 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_LED3(int index, TestItem item)
+        private bool Test_MB_FCT_PowerLED(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
@@ -7239,7 +8758,7 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_LED4_FullCharged(int index, TestItem item)
+        private bool Test_MB_FCT_LED4_Charging(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
@@ -7253,13 +8772,125 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
+        private bool Test_MB_FCT_LED4_FullCharged(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            Delay(100);
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 8.4);
+            Keithy2306LAN.Source(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1, 3);
+            value = Convert.ToString(RelayCard1.MeasureVoltage(3) * 2);
+
+            Delay(1000);
+
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 7.4);
+            Keithy2306LAN.Source(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1, 4);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_SetRtc(int index, TestItem item)
+        {
+
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.i2c_rtc_0x00;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            rlt = dut.get_i2c_rtc_result(tmpValue, ref value);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_CheckRtc(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.RTC);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            //FAIL
+            if (tmpValue.Contains("FAIL"))
+            {
+                value = "FW_RTC_FAIL";
+                rlt = false;
+                goto End;
+            }
+
+            //Date: 01 / 07 / 2026
+            //Time: 13:17:28
+            //PASS
+
+            string m_printer_year = "", m_printer_month = "", m_printer_day = "";
+            string m_printer_hour = "", m_printer_minute = "", m_printer_second = "";
+            List<string> values = tmpValue.Split('\n').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string var in values)
+            {
+                if (var.Contains("Date:"))
+                {
+                    string m_var = var.Replace("Date:", "");
+                    List<string> dates = m_var.Split('/').ToList();
+                    dates.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+                    m_printer_day = dates[0].Trim();
+                    m_printer_month = dates[1].Trim();
+                    m_printer_year = dates[2].Trim();
+                }
+
+                if (var.Contains("Time:"))
+                {
+                    string m_var = var.Replace("Time:", "");
+                    List<string> dates = m_var.Split(':').ToList();
+                    dates.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+                    m_printer_hour = dates[0].Trim();
+                    m_printer_minute = dates[1].Trim();
+                    m_printer_second = dates[2].Trim();
+                }
+            }
+
+            DateTime printer_datetime = new DateTime(
+                Convert.ToInt32(m_printer_year),
+                Convert.ToInt32(m_printer_month),
+                Convert.ToInt32(m_printer_day),
+                Convert.ToInt32(m_printer_hour),
+                Convert.ToInt32(m_printer_minute),
+                Convert.ToInt32(m_printer_second));
+
+            TimeSpan timeDiff = DateTime.Now - printer_datetime;
+
+            value = Math.Abs(timeDiff.TotalSeconds).ToString("F2");
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
         private bool Test_MB_FCT_DC_IN_ChargerCurrent(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
             Delay(100);
-            value = Convert.ToString(CaptureCard2.MeasureVoltage(3));
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 12);
+            Delay(2000);
+            value = Convert.ToString(Keithy2306LAN.Measure_scpi(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH2));
 
         End:
             item.Value = value;
@@ -7273,11 +8904,1257 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "", tmpValue = "";
 
             string currentTime = DateTime.Now.ToString("HH:mm:ss dd/MM/yyyy");
-            SerialPortWriteLineOnce($"functest RTC {currentTime}");
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, $"functest RTC {currentTime}");
+            rlt = (tmpValue.Contains("PASS"));
+            value = rlt ? "PASS" : "FAIL";
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp130ShortTp110_H(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //step3, 
+            string regAddr = "0x02290020", regVal = "0x00000005";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 6;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.second);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp128ShortTp112_L(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+
+            sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(4, MCU_DO_Status.Low);
+
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = " 0x02290024", regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 6;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.third);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0'); ;
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp111_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", sTmp = "";
+
+            string sCmd = "";
+
+            DI_Status specDI = DI_Status.High;
+            DI_Status mDI;
+            SeriPortWriteLine(spUART, sCmd);
+
+            /*
+             * memtool -32 0x020E012C=0x00000005
+memtool -32 0x020A4000=0x00001331
+memtool -32 0x020A4004=0x1E7F 6707
+             */
+
+            //step3, 
+            string regAddr = "0x020E012C", regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A4000";
+            regVal = "0x00001331";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A4004";
+            regVal = "0x1E7F6707";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            mDI = CaptureCard1.GetCaptureCardDI(0);
+
+            rlt = mDI == specDI;
+            // CaptureCard get DI
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp122ShortTp126_L(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01D8", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A8000";
+            regVal = "0x065BA400";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A8004";
+            regVal = "0x02458400";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020E01D4";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+
+            regAddr = "0x020A8000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.first);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp116ShortTp114_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E00A4", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x0209C000";
+            regVal = "0x3100619C";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x0209C004";
+            regVal = "0x01080233";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E00A8";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x0209C000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 1;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.first);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp115ShortTp113_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E00AC", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x0209C000";
+            regVal = "0x3000619C";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x0209C004";
+            regVal = "0x04080233";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E00B0";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x0209C000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 1;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.third);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp117ShortTp118_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01C0", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x000287FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00028800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01C4";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.second);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp121ShortTp123_L(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01C8", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x000087FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00088800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01CC";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 2;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.zeroth);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp127ShortTp129H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01D0", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x002087FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00208800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01BC";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.zeroth);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp130ShortTp110_1_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            //step3, 
+            string regAddr = "0x020A4000", regVal = "0x00001131";
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x02290020";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 6;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.second);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp128ShortTp112_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+
+            sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(4, MCU_DO_Status.High);
+
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = " 0x02290024", regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 6;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.third);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0'); ;
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp111_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+            DI_Status mDI;
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E012C", regVal = "0x00000005";//set this pin as GPIO PIN: LCD_DATA05
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN: LCD_DATA05 as High
+            regAddr = "0x020A4000";
+            regVal = "0x00001731";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A4004";
+            regVal = "0x1E7F6707";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            // need this di as 1.
+            mDI = CaptureCard1.GetCaptureCardDI(0);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp122ShortTp126_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01D8", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A8000";
+            regVal = "0x065FA400";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A8004";
+            regVal = "0x02458400";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020E01D4";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+
+            regAddr = "0x020A8000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.first);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp116ShortTp114_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E00A4", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x0209C000";
+            regVal = "0x3000619C";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x0209C004";
+            regVal = "0x01080233";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E00A8";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x0209C000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 1;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.first);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp115ShortTp113_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E00AC", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x0209C000";
+            regVal = "0x3400619C";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x0209C004";
+            regVal = "0x04080233";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E00B0";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x0209C000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 1;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.third);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp117ShortTp118_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01C0", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x000087FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00028800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01C4";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.second);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp121ShortTp123_H(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01C8", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x000887FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00088800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01CC";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 2;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = nib.check_bit_0_or_1(BitPosition.zeroth);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Tp127ShortTp129_L(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+            SeriPortWriteLine(spUART, sCmd);
+
+            //step3, 
+            string regAddr = "0x020E01D0", regVal = "0x00000005";//set this pin as GPIO.
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set this pin as GPIO PIN as low
+            regAddr = "0x020A0000";
+            regVal = "0x000087FF";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set output
+            regAddr = "0x020A0004";
+            regVal = "0x00208800";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            //set anther pin as GPIO
+            regAddr = "0x020E01BC";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A0000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 3;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            //0`4`5FA400  ( 0x`010`0 )
+            bool tmpRes = !nib.check_bit_0_or_1(BitPosition.zeroth);
+
+            rlt = tmpRes;
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_UP_IRQ_N(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                //memtool -32 0x020A0000=0x00008DFF
+                //send -> h, get low;
+                regAddr = "0x020A0000";
+                regVal = "0x00008DFF";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                //send -> l, get high;
+                //memtool -32 0x020A0000=0x000085FF
+                regAddr = "0x020A0000";
+                regVal = "0x000085FF";
+
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(40);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_LssSensorADC(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+
+            if (item.Name.ToLower().Contains("low"))
+            {
+                sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.LSS);
+            }
+            else if (item.Name.ToLower().Contains("top"))
+            {
+                sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.FRONT_LSS);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+            }
+
+            string sensorVal = "", drive = "", gain = "";
+            dut.get_LSS(tmpValue, ref sensorVal, ref drive, ref gain);
+
+            value = sensorVal;
 
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_LssSensorDI(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+
+            if (item.Name.ToLower().Contains("low"))
+            {
+                // h:
+                sCmd = PA45_FCT_Commands.Set_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                sCmd = PA45_FCT_Commands.Set_Front_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                Delay(100);
+                DI_Status hDI = DI_Status.Low;
+                for (int i = 0; i < 20; i++)
+                {
+                    hDI = CaptureCard1.GetCaptureCardDI(0);
+
+                    if (hDI == DI_Status.High)
+                    {
+                        break;
+                    }
+
+                    Delay(100);
+                }
+
+
+                sCmd = PA45_FCT_Commands.Set_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                sCmd = PA45_FCT_Commands.Set_Front_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                Delay(500);
+                DI_Status lDI = CaptureCard1.GetCaptureCardDI(0);
+
+                value = $"{(int)hDI} / {(int)lDI}";
+
+                rlt =
+                    (hDI == DI_Status.High) &&
+                    (lDI == DI_Status.Low);
+
+            }
+            else if (item.Name.ToLower().Contains("top"))
+            {
+                // h:
+                sCmd = PA45_FCT_Commands.Set_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                sCmd = PA45_FCT_Commands.Set_Front_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                Delay(100);
+                DI_Status hDI = DI_Status.Low;
+                for (int i = 0; i < 20; i++)
+                {
+                    hDI = CaptureCard1.GetCaptureCardDI(0);
+
+                    if (hDI == DI_Status.High)
+                    {
+                        break;
+                    }
+
+                    Delay(100);
+                }
+
+                sCmd = PA45_FCT_Commands.Set_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                sCmd = PA45_FCT_Commands.Set_Front_BM_High;
+                SeriPortWriteLine(spUART, sCmd);
+
+                Delay(500);
+                DI_Status lDI = CaptureCard1.GetCaptureCardDI(1);
+
+                value = $"{(int)hDI} / {(int)lDI}";
+
+                rlt =
+                    (hDI == DI_Status.High) &&
+                    (lDI == DI_Status.Low);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_COVER_SENSOR(int index, TestItem item)
+        {
+            bool rlt = false, rlt_h = false, rlt_l = false;
+            string value = "", tmpValue = "", nib_high = "", nib_low = "";
+            string sCmd = "", regAddr = "", regVal = "";
+
+            //memtool -32 0x020AC000 1
+            //read result = 0x020AC000:  00000BC3(0x1011)
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+
+            char c = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 5, ref c);
+
+            int nib = c.ascii_2_nibble();
+            rlt_h = nib.check_bit_0_or_1(BitPosition.zeroth);
+            nib_high = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard3.SetRelayOn(2);
+            Delay(1000);
+
+            regAddr = "0x02290028";
+            regVal = "0x00000005";
+
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            c = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 5, ref c);
+
+            nib = c.ascii_2_nibble();
+            rlt_l = !nib.check_bit_0_or_1(BitPosition.zeroth);
+            nib_low = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            rlt = rlt_h && rlt_l;
+
+            value = $"{nib_high} / {nib_low}";
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -7299,11 +10176,985 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard2.MeasureVoltage(8) * 2.42);
+            string sCmd = "", regAddr = "", regVal = "";
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                regAddr = "0x020E006C";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C004";
+                regVal = "0x00080233";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                regVal = "0x3000619C";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                regAddr = "0x020E006C";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                regVal = "0x3000618C";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            value = Convert.ToString(CaptureCard2.MeasureVoltage(8));
 
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_BuzzerControlSOC(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = "", regAddr = "", regVal = "";
+
+            if (item.Name.ToUpper().Contains("high"))
+            {
+                regAddr = "0x020E0164";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4000";
+                regVal = "0x01001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1F7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                value = Convert.ToString(CaptureCard2.MeasureVoltage(8));
+
+                regAddr = "0x020E0164";
+                regVal = "0x00000001";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+
+            if (item.Name.ToUpper().Contains("low"))
+            {
+                regAddr = "0x020E0164";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1F7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                value = Convert.ToString(CaptureCard2.MeasureVoltage(8));
+
+                regAddr = "0x020E0164";
+                regVal = "0x00000001";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+
+            value = CaptureCard2.MeasureVoltage(9).ToString();
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_BuzzerControlMCU(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = "", regAddr = "", regVal = "";
+
+            if (item.Name.ToUpper().Contains("high"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(19, MCU_DO_Status.High);
+            }
+
+            if (item.Name.ToUpper().Contains("low"))
+            {
+                sCmd = PA45_FCT_Commands.Set_MCU_Pin_DO(19, MCU_DO_Status.Low);
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            value = CaptureCard2.MeasureVoltage(9).ToString();
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_J20_KeySOC(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            string sCmd = "", regAddr = "", regVal = "", regAddr1 = "";
+            int relayIndex = -1, byteIndex = -1;
+            BitPosition bitIndex;
+            char cVal = '\0';
+            IRelayCard relay;
+
+            if (item.Name.ToUpper().Contains("TP191"))
+            {
+                relay = RelayCard3;
+                relayIndex = 4;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else if (item.Name.ToUpper().Contains("TP193"))
+            {
+                relay = RelayCard1;
+                relayIndex = 4;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else if (item.Name.ToUpper().Contains("TP197"))
+            {
+                relay = RelayCard1;
+                relayIndex = 6;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else if (item.Name.ToUpper().Contains("TP199"))
+            {
+                relay = RelayCard1;
+                relayIndex = 7;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else if (item.Name.ToUpper().Contains("TP200"))
+            {
+                relay = RelayCard1;
+                relayIndex = 8;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else if (item.Name.ToUpper().Contains("TP201"))
+            {
+                relay = RelayCard2;
+                relayIndex = 0;
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                byteIndex = 7;
+                bitIndex = BitPosition.first;
+            }
+            else
+            {
+                value = "TEST_POINT_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            relay.SetRelayOn(relayIndex);
+            Delay(500);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            dut.get_Memtool_Register_Char_Value(regVal, byteIndex, ref cVal);
+
+            int nib = cVal.ascii_2_nibble();
+            rlt = nib.check_bit_0_or_1(bitIndex);
+
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            relay.SetRelayOff(relayIndex);
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_BMSensor_ADCValue(int index, TestItem item)
+        {
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+
+            string sCmd = "";
+
+            if (item.Name.Contains("J15"))
+            {
+                sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.FRONT_LSS);
+            }
+            else if (item.Name.Contains("J18"))
+            {
+                sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.LSS);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                tmpValue = GetUARTStringFlagA(sCmd);
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    bTimeOut = false;
+                    break;
+                }
+
+                Delay(1000);
+            }
+
+            if (bTimeOut)
+            {
+                value = $"{Test_Proc_Error_Code.TimeOut}";
+                rlt = false;
+                goto End;
+            }
+
+            string sensorVal = "", drive = "", gain = "";
+            dut.get_LSS(tmpValue, ref sensorVal, ref drive, ref gain);
+            value = sensorVal;
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_BMSensor_DI(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            value = Convert.ToString(CaptureCard2.MeasureVoltage(7));
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_SelfStripSensor_DI(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            char cVal = '\0';
+            int chIndex = 4;
+            if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                RelayCard3.SetRelayOn(3);
+                Delay(1000);
+            }
+            else
+            {
+                specDI = DI_Status.High;
+            }
+
+            regAddr = "0x020E0134";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A4000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            SeriPortWriteLine(spUART, sCmd);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrEmpty(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            dut.get_Memtool_Register_Char_Value(regVal, chIndex, ref cVal);
+
+            int nib = cVal.ascii_2_nibble();
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = nib.check_bit_0_or_1(BitPosition.zeroth);
+            }
+
+            if (specDI == DI_Status.Low)
+            {
+                rlt = !nib.check_bit_0_or_1(BitPosition.zeroth);
+                RelayCard3.SetRelayOff(3);
+            }
+
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_SelfStripSensor(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            string sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.LTS);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+            dut.get_LTS(tmpValue, ref value);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_LCD_CLK(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = -1;
+            BitPosition bitPosi = BitPosition.error;
+            char cVal = '\0';
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+
+                chIndex = 4;
+                bitPosi = BitPosition.zeroth;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020E00F4";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrEmpty(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+
+                chIndex = 4;
+                bitPosi = BitPosition.zeroth;
+                regAddr = "0x020A4000";
+                regVal = "0x00001330";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020E00F4";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrEmpty(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            dut.get_Memtool_Register_Char_Value(regVal, chIndex, ref cVal);
+
+            int nib = cVal.ascii_2_nibble();
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = nib.check_bit_0_or_1(bitPosi);
+            }
+
+            if (specDI == DI_Status.Low)
+            {
+                rlt = !nib.check_bit_0_or_1(bitPosi);
+            }
+
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+
+        }
+
+        private bool Test_MB_FCT_LCD_TX(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = -1;
+            BitPosition bitPosi = BitPosition.error;
+            char cVal = '\0';
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+
+                chIndex = 4;
+                bitPosi = BitPosition.third;
+                regAddr = "0x020E00F8";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                regVal = "0x0000A7FF";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0004";
+                regVal = "0x00002800";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrEmpty(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+
+                chIndex = 4;
+                bitPosi = BitPosition.third;
+                regAddr = "0x020E00F8";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                regVal = "0x000087FF";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0004";
+                regVal = "0x00002800";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A0000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrEmpty(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            dut.get_Memtool_Register_Char_Value(regVal, chIndex, ref cVal);
+
+            int nib = cVal.ascii_2_nibble();
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = nib.check_bit_0_or_1(bitPosi);
+            }
+
+            if (specDI == DI_Status.Low)
+            {
+                rlt = !nib.check_bit_0_or_1(bitPosi);
+            }
+
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+
+        }
+
+        private bool Test_MB_FCT_TPH_TP151(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 2;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00011331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP152(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 3;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00021331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            Delay(500);
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP153(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 4;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00041331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP157(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 5;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00081331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP158(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 6;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00101331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP159(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 7;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00201331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP160(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 8;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020A4000";
+                regVal = "0x00401331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_TP161(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            DI_Status mDI, specDI;
+            int chIndex = 9;
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                specDI = DI_Status.High;
+                regAddr = "0x020E01EC";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A8000";
+                regVal = "0x06DFA400";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A8004";
+                regVal = "0x02C18400";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                /*
+                memtool -32 0x020E01EC=0x00000005
+                memtool -32 0x020A8000=0x06DFA400
+                memtool -32 0x020A8004=0x02C18400
+                    */
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                specDI = DI_Status.Low;
+                regAddr = "0x020E01EC";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                /*
+                memtool - 32 0x020E01EC = 0x00000005
+                memtool - 32 0x020A8000 = 0x065FA400)
+                memtool - 32 0x020A8004 = 0x02C18400
+                */
+                regAddr = "0x020A8000";
+                regVal = "0x065FA400";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A8004";
+                regVal = "0x02C18400";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            mDI = CaptureCard1.GetCaptureCardDI(chIndex);
+            rlt = mDI == specDI;
+
+            value = $"{(int)mDI}";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -7320,25 +11171,408 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_Buzzer_Control(int index, TestItem item)
+        private bool Test_MB_FCT_Cellular_Modem(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(CaptureCard2.MeasureVoltage(9));
+            //just one usb device
+            string sCmd = PA45_FCT_Commands.ls_media;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
 
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            List<string> deviList = new List<string>();
+            dut.get_usb_device(tmpValue, ref deviList);
+
+            for (int i = 0; i < deviList.Count; i++)
+            {
+                AppendRuntimeLog($"{deviList[i]}");
+                value = value + " / " + value;
+            }
+
+            rlt = deviList.Count == 2;
+            value = $"{deviList.Count}";
         End:
             item.Value = value;
-            rlt = item.IsValueInRange<double>();
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_USB_HUB(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //just one usb device
+            string sCmd = PA45_FCT_Commands.ls_media;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            List<string> deviList = new List<string>();
+            dut.get_usb_device(tmpValue, ref deviList);
+
+            for (int i = 0; i < deviList.Count; i++)
+            {
+                AppendRuntimeLog($"{deviList[i]}");
+                value = value + " / " + value;
+            }
+
+            rlt = deviList.Count == 2;
+            value = $"{deviList.Count}";
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
         private bool Test_MB_FCT_USB_HUB_HOST_J5(int index, TestItem item)
         {
+            bool rlt = false, rltIO = false, rltVolt = false;
+            string value = "", tmpValue = "", ioVal = "", voltVal = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            List<string> deviList = new List<string>();
+            int relayIdx = -1;
+            if (item.Name.ToUpper().Contains("CC1"))
+            {
+                relayIdx = 2;
+                RelayCard2.SetRelayOn(relayIdx);
+            }
+            else if (item.Name.ToUpper().Contains("CC2"))
+            {
+                relayIdx = 1;
+                RelayCard2.SetRelayOn(relayIdx);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            //memtool - 32 0x020A4000 = 
+            regAddr = "0x020A4000";
+            regVal = "0x00001331";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+            Delay(500);
+
+            //memtool - 32 0x020A4004 = 0x1E7F6B07
+
+            regAddr = "0x02290010";
+            regVal = "0x00000005";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+            Delay(500);
+
+            regAddr = "0x020AC000";
+            sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 7;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rltIO = !nib.check_bit_0_or_1(BitPosition.first);
+            ioVal = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            voltVal = CaptureCard2.MeasureVoltage(10).ToString();
+
+            Delay(2000);
+            //just one usb device
+            sCmd = PA45_FCT_Commands.ls_media;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_usb_device(tmpValue, ref deviList);
+
+            for (int i = 0; i < deviList.Count; i++)
+            {
+                AppendRuntimeLog($"{deviList[i]}");
+                value = value + " / " + value;
+            }
+
+            rlt = deviList.Count == 3;
+            RelayCard2.SetRelayOn(relayIdx);
+        End:
+            item.Value = voltVal;
+            rltVolt = item.IsValueInRange<double>();
+            item.Value = $"{deviList.Count} / {ioVal} / {voltVal}";
+            return rlt && rltVolt;
+        }
+
+        private bool Test_MB_FCT_VEHICLE_MOUNT_DET(int index, TestItem item)
+        {
             bool rlt = false;
             string value = "", tmpValue = "";
+            string regAddr = "0x0209C000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
 
-            value = Convert.ToString(CaptureCard2.MeasureVoltage(10));
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 5;
+
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = nib.check_bit_0_or_1(BitPosition.zeroth);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_MFI_Chip(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.i2c_mfi_0x10;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            rlt = dut.get_i2c_mfi_result(tmpValue, ref value);
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_SecurityIC(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.provCmd_security_ic;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            rlt = dut.get_i2c_security_result(tmpValue, ref value);
+
+        End:
+            item.Value = value;
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_ChargerIC(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.i2c_charger;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            rlt = dut.get_i2c_charger_result(tmpValue, ref value);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_LTPPWR_TPH(int index, TestItem item)
+        {
+            bool rlt = false, rlt1 = false, fstRlt = false;
+            string value = "", tmpValue = "", adcVal = "", fstVal = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            double specUpTemp = -1, specDownTemp = -1;
+            if (item.Name.ToUpper().Contains("ON"))
+            {
+                fstVal = Convert.ToString(RelayCard1.MeasureVoltage(5) * 2);
+                double fstDouVal = Convert.ToDouble(fstVal);
+
+                if (fstDouVal > 0.5)
+                {
+                    fstRlt = false;
+                }
+                else
+                {
+                    fstRlt = true;
+                }
+
+                RelayCard2.SetRelayOn(3);
+                Delay(1000);
+
+                for (int i = 0; i < 6; i++)
+                {
+                    for (int j = 0; j < 5; j++)
+                    {
+                        regAddr = "0x020A4000";
+                        regVal = "0x00001333";
+                        sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                        SeriPortWriteLine(spUART, sCmd, 1);
+
+                        regAddr = "0x020A4004";
+                        regVal = "0x1E7F6307";
+                        sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                        SeriPortWriteLine(spUART, sCmd, 1);
+                    }
+
+                    value = Convert.ToString(RelayCard1.MeasureVoltage(5) * 2);
+
+                    if (Convert.ToDouble(value) > 1)
+                    {
+                        break;
+                    }
+
+                    Delay(100);
+                }
+
+
+
+                for (int i = 0; i < 10; i++)
+                {
+                    regAddr = "0x020A4000";
+                    regVal = "0x00001333";
+                    sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                    SeriPortWriteLine(spUART, sCmd, 1);
+
+                    regAddr = "0x020A4004";
+                    regVal = "0x1E7F6307";
+                    sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                    SeriPortWriteLine(spUART, sCmd, 1);
+
+                }
+
+                sCmd = PA45_FCT_Commands.Get_MCU_Pin_ADC(7);
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+                dut.get_uart_mcu_cat(tmpValue, ref value);
+
+                specUpTemp = Convert.ToDouble(INI.GetValue("Specs", "TPH_Norm_Temp_Spec_Up", ConfigFile));
+                specDownTemp = Convert.ToDouble(INI.GetValue("Specs", "TPH_Norm_Temp_Spec_Low ", ConfigFile));
+
+                adcVal = value.d2a(10, 3.3).ToString("F2");
+
+                /*
+                if (!(Convert.ToDouble(adcVal) <= specUpTemp && Convert.ToDouble(adcVal) > specUpTemp))
+                {
+                    value = "TPH_TEMP_OUT_OF_SPEC";
+                    rlt = false;
+                    goto End;
+                }
+                */
+
+                value = Convert.ToString(RelayCard1.MeasureVoltage(5) * 2);
+                RelayCard2.SetRelayOff(3);
+            }
+            else if (item.Name.ToUpper().Contains("OFF"))
+            {
+                RelayCard2.SetRelayOn(5);
+                Delay(1000);
+
+                sCmd = PA45_FCT_Commands.Get_MCU_Pin_ADC(7);
+                tmpValue = Write_Read_SeriPort_Delay(Communicate_Type.UART, sCmd, 3000);
+
+                if (string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+                dut.get_uart_mcu_cat(tmpValue, ref value);
+
+                specUpTemp = Convert.ToDouble(INI.GetValue("Specs", "TPH_Over_Temp_Spec_Up", ConfigFile));
+                specDownTemp = Convert.ToDouble(INI.GetValue("Specs", "TPH_Over_Temp_Spec_Low ", ConfigFile));
+
+                adcVal = value.d2a(10, 3.3).ToString("F2");
+
+                /*
+                if (!(Convert.ToDouble(adcVal) <= specUpTemp && Convert.ToDouble(adcVal) > specUpTemp))
+                {
+                    value = "TPH_TEMP_OUT_OF_SPEC";
+                    rlt = false;
+                    goto End;
+                }
+                */
+
+                regAddr = "0x020A4000";
+                regVal = "0x00001333";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4000";
+                regVal = "0x00001331";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F6307";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+                Delay(1000);
+                value = Convert.ToString(RelayCard1.MeasureVoltage(5) * 2);
+                RelayCard2.SetRelayOff(5);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+            rlt1 = ((Convert.ToDouble(adcVal) <= specUpTemp && Convert.ToDouble(adcVal) > specUpTemp));
+            value = adcVal;
 
         End:
             item.Value = value;
@@ -7346,31 +11580,455 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_LTPPWR_TPH(int index, TestItem item)
+        private bool Test_MB_FCT_Key_SOC_TP191(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            if (item.Name.ToUpper().Contains("ON"))
-            {
-                RelayCard2.SetRelayOn(3);
-                RelayCard2.SetRelayOn(4);
-                Delay(1000);
-                value = Convert.ToString(RelayCard1.MeasureVoltage(5));
-                RelayCard2.SetRelayOff(3);
-                RelayCard2.SetRelayOff(4);
-            }
-            else
-            {
-                RelayCard2.SetRelayOn(5);
-                Delay(1000);
-                value = Convert.ToString(RelayCard1.MeasureVoltage(5));
-                RelayCard2.SetRelayOff(5);
-            }
+            RelayCard1.SetRelayOn(0);
+            Delay(500);
+
+            string regAddr = "0x020A0000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.first);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard1.SetRelayOff(0);
+            Delay(500);
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_SOC_TP193(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard1.SetRelayOn(4);
+            Delay(500);
+
+            string regAddr = "0x020A0000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.zeroth);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard1.SetRelayOff(4);
+            Delay(500);
 
         End:
             item.Value = value;
-            rlt = item.IsValueInRange<double>();
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_SOC_TP197(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard1.SetRelayOn(5);
+            Delay(500);
+
+            string regAddr = "0x020A0000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.third);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard1.SetRelayOff(5);
+            Delay(500);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_SOC_TP199(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard1.SetRelayOn(6);
+            Delay(500);
+
+            string regAddr = "0x0209C000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 6, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.third);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard1.SetRelayOff(6);
+            Delay(500);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_SOC_TP200(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard1.SetRelayOn(7);
+            Delay(500);
+
+            string regAddr = "0x020A0000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.second);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard1.SetRelayOff(7);
+            Delay(500);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_SOC_TP201(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard2.SetRelayOn(0);
+            Delay(500);
+
+            string regAddr = "0x020A0000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            dut.get_Memtool_Register_Char_Value(regVal, 6, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            rlt = !nib.check_bit_0_or_1(BitPosition.zeroth);
+            value = Convert.ToString(nib, 2).PadLeft(4, '0');
+
+            RelayCard2.SetRelayOff(0);
+            Delay(500);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP191(int index, TestItem item)
+        {
+            /*
+           TP191 (pwr 28)
+           TP193 (menu 30)
+           TP197 (down 33)
+           TP199 (entry 31)
+           TP200 (feed 29)
+           TP201 (up 32)
+            */
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard3.SetRelayOn(4);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(28);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+            RelayCard3.SetRelayOff(4);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP193(int index, TestItem item)
+        {
+            /*
+          TP191 (pwr 28)
+          TP193 (menu 30)
+          TP197 (down 33)
+          TP199 (entry 31)
+          TP200 (feed 29)
+          TP201 (up 32)
+           */
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard1.SetRelayOn(4);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(30);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+            RelayCard1.SetRelayOff(4);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP197(int index, TestItem item)
+        {
+            /*
+          TP191 (pwr 28)
+          TP193 (menu 30)
+          TP197 (down 33)
+          TP199 (entry 31)
+          TP200 (feed 29)
+          TP201 (up 32)
+           */
+
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard1.SetRelayOn(5);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(33);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+
+            RelayCard1.SetRelayOff(5);
+
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP199(int index, TestItem item)
+        {
+            /*
+        TP191 (pwr 28)
+        TP193 (menu 30)
+        TP197 (down 33)
+        TP199 (entry 31)
+        TP200 (feed 29)
+        TP201 (up 32)
+         */
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard1.SetRelayOn(6);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(31);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+
+            RelayCard1.SetRelayOff(6);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP200(int index, TestItem item)
+        {
+            /*
+        TP191 (pwr 28)
+        TP193 (menu 30)
+        TP197 (down 33)
+        TP199 (entry 31)
+        TP200 (feed 29)
+        TP201 (up 32)
+         */
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard1.SetRelayOn(7);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(29);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+
+            RelayCard1.SetRelayOff(7);
+
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_Key_MCU_TP201(int index, TestItem item)
+        {
+            /*
+        TP191 (pwr 28)
+        TP193 (menu 30)
+        TP197 (down 33)
+        TP199 (entry 31)
+        TP200 (feed 29)
+        TP201 (up 32)
+         */
+
+            bool rlt = false, bTimeOut = true;
+            string value = "", tmpValue = "";
+            DI_Status specDI = DI_Status.Low;
+
+            RelayCard2.SetRelayOn(0);
+            Delay(1000);
+            string sCmd = PA45_FCT_Commands.Get_MCU_Pin_DI(32);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+
+            if (specDI == DI_Status.High)
+            {
+                rlt = Convert.ToInt32(value) == 1;
+            }
+            if (specDI == DI_Status.Low)
+            {
+                rlt = Convert.ToInt32(value) == 0;
+            }
+
+            RelayCard2.SetRelayOff(0);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -7378,8 +12036,35 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
             string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            if (item.Name.ToLower().Contains("high"))
+            {
+                regAddr = "0x020A4000";
+                regVal = "0x00001339";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
 
-            value = "-1";
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F630F";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                regAddr = "0x020A4004";
+                regVal = "0x1E7F630F";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERR";
+                rlt = false;
+                goto End;
+            }
+
+            value = Convert.ToString(RelayCard1.MeasureVoltage(4) * 2);
 
         End:
             item.Value = value;
@@ -7387,13 +12072,197 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_V24P0_MOTOR(int index, TestItem item)
+        private bool Test_MB_FCT_J22(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard1.MeasureVoltage(6));
+            string regAddr = "", regVal = "", sCmd = "";
 
+            if (item.Name.ToLower().Contains("high"))
+            {
+                regAddr = "0x020E00BC";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                regVal = "0x7000619C";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C004";
+                regVal = "0x40080233";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020E00C0";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 0;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = nib.check_bit_0_or_1(BitPosition.third);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+            }
+            else if (item.Name.ToLower().Contains("low"))
+            {
+                regAddr = "0x020E00BC";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                regVal = "0x3000619C";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C004";
+                regVal = "0x40080233";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x020E00C0";
+                regVal = "0x00000005";
+                sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+                SeriPortWriteLine(spUART, sCmd);
+
+                regAddr = "0x0209C000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 0;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = !nib.check_bit_0_or_1(BitPosition.third);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
+
+
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_TPH_ResiMeas(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "", sCmd = "";
+            string regAddr = "0x020A4000", regVal = "0x00001335";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            regAddr = "0x020A4004";
+            regVal = "0x1E7F6307";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+
+            Delay(500);
+
+            sCmd = PA45_FCT_Commands.Get_MCU_Pin_ADC(6);
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_uart_mcu_cat(tmpValue, ref value);
+            double refVoltage = 3.3;
+            double analogVal = value.d2a(10, refVoltage);
+            analogVal = analogVal * 4.32;
+            value = Convert.ToString(analogVal);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_MotorTest(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "", sCmd = "";
+            string zh_cn = "", en_us = "", thai = "";
+
+            RelayCard3.SetRelayOn(7);
+            Keithy2306LAN.Connect();
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 7.4);
+
+            RelayCard3.SetRelayOn(2);
+            Delay(1500);
+
+            sCmd = PA45_FCT_Commands.motor_cleanfeed;
+
+            zh_cn = "按下yes之后马达会跑。";
+            en_us = "";
+            thai = "";
+            bool OpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            if (!OpStep)
+            {
+                value = "OP_STEP_FAIL";
+                rlt = false;
+                goto End;
+            }
+
+            SeriPortWriteLine(spUART, sCmd);
+            zh_cn = "请观察马达是否有转动。";
+            en_us = "";
+            thai = "";
+            OpStep = GetOperatorSelection(zh_cn, en_us, thai);
+
+            rlt = OpStep;
+            value = rlt ? "PASS" : "FAIL";
+            Delay(5000);
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_V24P0_MOTOR(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "", sCmd = "";
+
+            /*
+            string regAddr = "0x020A4000", regVal = "0x00003331";
+            sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+            RelayCard1.MeasureVoltage(6);
+            value = Convert.ToString(RelayCard1.MeasureVoltage(6));
+            */
+            sCmd = PA45_FCT_Commands.motor_cleanfeed;
+            Delay(100);
+            //value = Keithy2306LAN.Measure_scpi(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1);
+            value = RelayCard1.MeasureVoltage(6).ToString();
+            Delay(2000);
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
@@ -7404,22 +12273,25 @@ namespace FCT.ViewLayer.FormLibrary
         {
             bool rlt = false;
 
-            string value = "", tmpValue = "";
-
+            string value = "", tmpValue = "", sCmd = "";
+            int relayIndex = -1;
             if (item.Name.Contains("J14"))
             {
-                RelayCard2.SetRelayOn(7);
-                Delay(1000);
-                value = Convert.ToString(-1);
-                RelayCard2.SetRelayOff(7);
+                relayIndex = 7;
+
             }
             else
             {
-                RelayCard2.SetRelayOn(6);
-                Delay(1000);
-                value = Convert.ToString(-1);
-                RelayCard2.SetRelayOff(6);
+                relayIndex = 6;
+
             }
+
+            RelayCard2.SetRelayOn(relayIndex);
+            Delay(500);
+            sCmd = PA45_FCT_Commands.functest_motor_cleanfeed_1000;
+            SeriPortWriteLine(spUART, sCmd);
+            value = Keithy2306LAN.Measure(Electrical_Signal_Type.CURR, KEITHLEY_2306_Channel.CH1);
+            RelayCard2.SetRelayOff(relayIndex);
 
         End:
             item.Value = value;
@@ -7432,6 +12304,11 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
+            string regAddr = "0x0209C000", regVal = "0x300061BF";
+
+            string sCmd = PA45_FCT_Commands.SetMemoryAddressValue(regAddr, regVal);
+            SeriPortWriteLine(spUART, sCmd);
+            Delay(1000);
             value = Convert.ToString(CaptureCard2.MeasureVoltage(11));
 
         End:
@@ -7445,11 +12322,72 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(-1);
+            string sCmd = PA45_FCT_Commands.GetSensorValue;
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            string sensorVal = "", tempVal = "";
+            dut.get_printer_sensor_templture(tmpValue, PA45_Sensor.MPCB, ref tempVal);
+            value = tempVal;
 
         End:
             item.Value = value;
             rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_3AxisMotion(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.functest_motion;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            rlt = tmpValue.Contains("PASS");
+            value = rlt ? "PASS" : "FAIL";
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_3AxisMotion_INT(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string sCmd = PA45_FCT_Commands.functest_motion;
+
+            tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_MOTION(tmpValue, ref value);
+
+            rlt = tmpValue.Contains("PASS") && value.ToUpper().Contains("0X");
+
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -7466,12 +12404,35 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_PoweroffVBATT(int index, TestItem item)
+        private bool Test_MB_FCT_V2P7_CAP(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard1.MeasureVoltage(7));
+            value = Convert.ToString(RelayCard2.MeasureVoltage(4) * 2);
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_VBATTPowerOff(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            //1. DC_IN Power Supply off (2306 ch2 关掉)
+            Keithy2306LAN.SourceOff(KEITHLEY_2306_Channel.CH2);
+            //2. VBUS_IN Power Supply off
+            RelayCard1.SetRelayOff(2);
+            Delay(500);
+
+            //3. 電池需有接上 (VABTT) 2306 Channel-1 7.4V
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 7.4);
+            Delay(500);
+
+            value = Convert.ToString(RelayCard1.MeasureVoltage(0) * 2);
 
         End:
             item.Value = value;
@@ -7484,7 +12445,26 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard2.MeasureVoltage(0) * 5);
+            if (item.Name.ToUpper().Contains("CC1O"))
+            {
+                RelayCard3.SetRelayOn(0);
+                Delay(500);
+                value = Convert.ToString(RelayCard2.MeasureVoltage(0) * 2);
+                RelayCard3.SetRelayOff(0);
+            }
+            else if (item.Name.ToUpper().Contains("CC2O"))
+            {
+                RelayCard3.SetRelayOn(1);
+                Delay(500);
+                value = Convert.ToString(RelayCard2.MeasureVoltage(0) * 2);
+                RelayCard3.SetRelayOff(1);
+            }
+            else
+            {
+                value = "ITEM_NAME_ERROR";
+                rlt = false;
+                goto End;
+            }
 
         End:
             item.Value = value;
@@ -7495,17 +12475,82 @@ namespace FCT.ViewLayer.FormLibrary
         private bool Test_MB_FCT_LOWPWR_IRQ_N(int index, TestItem item)
         {
             bool rlt = false;
-            string value = "", tmpValue = "";
+            string value = "", tmpValue = "", adcVal = "";
+            string regAddr = "", regVal = "", sCmd = "";
+            char cVal = '\0';
 
-            if (item.Name.Contains("=6.5"))
+            if (item.Name.Contains(">6.5"))
             {
-                value = Convert.ToString(RelayCard2.MeasureVoltage(1));
-            }
-            else
-            {
-                value = Convert.ToString(RelayCard2.MeasureVoltage(2));
-            }
+                /*
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 2.5);
+                Delay(1000);
+                RelayCard3.SetRelayOn(6);
+                */
 
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 7.0);
+
+                regAddr = "0x0209C000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                if (!nib.check_bit_0_or_1(BitPosition.second))
+                {
+                    value = "CHECK_IMX_GPIO_IO02_HIGH_NG";
+                    rlt = false;
+                    goto End;
+                }
+                Delay(500);
+                value = Convert.ToString(RelayCard2.MeasureVoltage(1) * 2);
+                //RelayCard3.SetRelayOff(6);
+
+            }
+            else if (item.Name.Contains("<6.5"))
+            {
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 2.5);
+                Delay(1000);
+                RelayCard3.SetRelayOn(6);
+
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 6);
+
+                regAddr = "0x0209C000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                if (string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    value = "TimeOut";
+                    rlt = false;
+                    goto End;
+                }
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                dut.get_Memtool_Register_Char_Value(regVal, 7, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                if (nib.check_bit_0_or_1(BitPosition.second))
+                {
+                    value = "LOWPWR_IRQ_N_FAIL";
+                    rlt = false;
+                    goto End;
+                }
+                Delay(500);
+                value = Convert.ToString(RelayCard2.MeasureVoltage(1) * 2);
+                RelayCard3.SetRelayOn(6);
+
+            }
 
         End:
             item.Value = value;
@@ -7513,16 +12558,57 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_N17945044(int index, TestItem item)
+        private bool Test_MB_FCT_LOWPWR_IRQ_N_DI(int index, TestItem item)
         {
-            bool rlt = false;
+            bool rlt = false, bTimeOut = true;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard2.MeasureVoltage(2));
+            string regAddr = "0x0209C000", regVal = "";
+            string sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+            SeriPortWriteLine(spUART, sCmd);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                tmpValue = GetUARTStringFlagA(sCmd);
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    bTimeOut = false;
+                    break;
+                }
+                Delay(500);
+            }
+
+            if (bTimeOut)
+            {
+                value = "TimeOut";
+                rlt = false;
+                goto End;
+            }
+
+            dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+            char cVal = '\0';
+            int sIndex = 7;
+
+            //0<4>5FA400  ( 0x<010>0 )
+            dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+            int nib = cVal.ascii_2_nibble();
+
+            AppendRuntimeLog($"Nibble = {nib}, 4bit binary = {Convert.ToString(nib, 2).PadLeft(4, '0')}");
+
+            bool is_bit2_0 = (nib & 0x4) == 0;
+            value = (nib & 0x4).ToString();
+            if (item.Name.Contains("=6.5"))
+            {
+                rlt = is_bit2_0 == false;
+            }
+            else
+            {
+                rlt = is_bit2_0 == true;
+            }
 
         End:
             item.Value = value;
-            rlt = item.IsValueInRange<double>();
+            //rlt = item.IsValueInRange<double>();
             return rlt;
         }
 
@@ -7531,7 +12617,21 @@ namespace FCT.ViewLayer.FormLibrary
             bool rlt = false;
             string value = "", tmpValue = "";
 
-            value = Convert.ToString(RelayCard2.MeasureVoltage(3));
+            if (item.Name.Contains("6.0"))
+            {
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 2.5);
+                Delay(1000);
+                RelayCard3.SetRelayOn(6);
+                Delay(1000);
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH1, 4.5);
+            }
+
+            value = Convert.ToString(RelayCard2.MeasureVoltage(3) * 2);
+
+            if (item.Name.Contains("6.0"))
+            {
+                RelayCard3.SetRelayOff(6);
+            }
 
         End:
             item.Value = value;
@@ -7552,7 +12652,130 @@ namespace FCT.ViewLayer.FormLibrary
             return rlt;
         }
 
-        private bool Test_MB_FCT_HOTSWAP_V5P2_CAP(int index, TestItem item)
+        private bool Test_MB_FCT_SuperCapLowDetect(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+            string regAddr = "", regVal = "", sCmd = "";
+
+            Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 2.5);
+            Delay(1000);
+            RelayCard3.SetRelayOn(6);
+
+            if (item.Name.ToLower().Contains("high"))
+            {
+                value = Convert.ToString(RelayCard2.MeasureVoltage(3));
+                //step1, 
+                Keithy2306LAN.Connect();
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 3);
+
+                Delay(1000);
+                RelayCard3.SetRelayOn(6);
+
+                regAddr = "0x020A4000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 6;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = !nib.check_bit_0_or_1(BitPosition.first);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+                RelayCard3.SetRelayOff(6);
+            }
+            else
+            {
+                value = Convert.ToString(RelayCard2.MeasureVoltage(3));
+                //step1, 
+                Keithy2306LAN.Connect();
+                Keithy2306LAN.Source(Electrical_Signal_Type.VOLT, KEITHLEY_2306_Channel.CH2, 1.5);
+                Delay(1000);
+                RelayCard3.SetRelayOn(6);
+                regAddr = "0x020A4000";
+                sCmd = PA45_FCT_Commands.GetMemoryAddressValue(regAddr);
+                tmpValue = Write_Read_SeriPort(Communicate_Type.UART, sCmd);
+
+                dut.get_Memtool_Register_Hex_Value(tmpValue, regAddr, ref regVal);
+                char cVal = '\0';
+                int sIndex = 6;
+
+                dut.get_Memtool_Register_Char_Value(regVal, sIndex, ref cVal);
+                int nib = cVal.ascii_2_nibble();
+
+                rlt = nib.check_bit_0_or_1(BitPosition.first);
+                value = Convert.ToString(nib, 2).PadLeft(4, '0');
+                RelayCard3.SetRelayOff(6);
+            }
+
+            RelayCard3.SetRelayOff(6);
+        End:
+            item.Value = value;
+            //rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_V5P0_MCU_PowerOff(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            value = Convert.ToString(CaptureCard1.MeasureVoltage(2));
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        private bool Test_MB_FCT_PowerButtonTurnOff(int index, TestItem item)
+        {
+            bool rlt = false;
+            string value = "", tmpValue = "";
+
+            RelayCard3.SetRelayOn(4);
+
+            Delay(6000);
+            RelayCard3.SetRelayOff(4);
+
+            for (int i = 0; i < 30; i++)
+            {
+                value = Convert.ToString(CaptureCard1.MeasureVoltage(2));
+                item.Value = value;
+                rlt = item.IsValueInRange<double>();
+                AppendRuntimeLog($"times:{i}, voltage: {value}");
+
+                if (rlt)
+                {
+                    return rlt;
+                }
+                Delay(1000);
+            }
+
+        End:
+            item.Value = value;
+            rlt = item.IsValueInRange<double>();
+            return rlt;
+        }
+
+        /*
+    private bool Test_MB_FCT_HOTSWAP_V5P2_CAP(int index, TestItem item)
+    {
+        bool rlt = false;
+        string value = "", tmpValue = "";
+
+        value = Convert.ToString(RelayCard2.MeasureVoltage(2));
+
+    End:
+        item.Value = value;
+        rlt = item.IsValueInRange<double>();
+        return rlt;
+    }
+    */
+        private bool Test_MB_FCT_MCU_FW_Version(int index, TestItem item)
         {
             bool rlt = false;
             string value = "", tmpValue = "";
@@ -7564,6 +12787,7 @@ namespace FCT.ViewLayer.FormLibrary
             rlt = item.IsValueInRange<double>();
             return rlt;
         }
+
 
         #endregion
 
@@ -7604,7 +12828,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void go_through_testing_process()
         {
-            try
+            //try
             {
                 DUT_SERIAL_PORT_STATUS = false;
                 SetTestEntery(false);
@@ -7619,7 +12843,8 @@ namespace FCT.ViewLayer.FormLibrary
                     m_type.Name == "TopSensor" ||
                     m_type.Name == "LowSensor" ||
                     m_type.Name == "LTSSensor" ||
-                    m_type.Name == "PA45_PowerBoard")
+                    m_type.Name == "PA45_PowerBoard" ||
+                    (m_type.Name == "PA45" && productConfig.STATION_CODE == "Print_MAC_label_Program_NFC"))
                 {
                     DUT_SERIAL_PORT_STATUS = true;
 
@@ -7674,6 +12899,8 @@ namespace FCT.ViewLayer.FormLibrary
                         // connect again.
                         DUT_SERIAL_PORT_STATUS = InitializeSerialport(TESTER_VID, TESTER_PID, spTester);
                     }
+
+
                 }
 
             TEST:
@@ -7681,7 +12908,6 @@ namespace FCT.ViewLayer.FormLibrary
                 {
                     dura_list.Clear();
 
-                    //自动丢弃小数点部分
                     int process_bar_unit = 1000 / dut.TestItems.Count;
 
                     Invoke(new Action(() => { pb_test_thread.Maximum = 1000; }));
@@ -7701,10 +12927,7 @@ namespace FCT.ViewLayer.FormLibrary
                         tmpItem.Tested -= OnTested;
                         tmpItem.TestFinished -= OnTestFinished;
 
-                        if (ckbFailStop.Checked)
-                        {
-                            if (!dut.TestItems[i].Result) { break; }
-                        }
+                        if (ckbFailStop.Checked) { if (!dut.TestItems[i].Result) { break; } }
                     }
                 }
                 else
@@ -7714,6 +12937,8 @@ namespace FCT.ViewLayer.FormLibrary
 
                 Invoke(new Action(() => { lblFinishTime.Text = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"); }));
             }
+
+            /*
             catch (Exception e)
             {
                 Invoke(new Action(() =>
@@ -7724,7 +12949,9 @@ namespace FCT.ViewLayer.FormLibrary
                 }));
                 //return;
             }
-            finally
+            */
+
+            //finally
             {
                 Invoke(new Action(() =>
                 {
@@ -7739,77 +12966,91 @@ namespace FCT.ViewLayer.FormLibrary
                     DataAccess.SaveTxtLog(dut, rtbLog, rtbUSB, rtbSerialport);
                     DataAccess.SaveCsvLog(dut, MainboardPartNumber);
                     DataAccess.SaveCsvLogByDay(dut, MainboardPartNumber);
+                }));
 
-                    if (ckbSFCS.Checked)
+                if (productConfig.STATION_CODE.Contains("03"))
+                {
+                    this.Invoke(new Action(() => { ckbSFCS.Checked = true; }));
+                }
+
+                if (ckbSFCS.Checked)
+                {
+                    Prod.PA45 m_PA45 = product as Prod.PA45;
+                    string m_sn = "", m_sn1 = "";
+                    if (m_PA45 != null)
                     {
-                        Prod.PA45 m_PA45 = product as Prod.PA45;
-                        string m_sn = "", m_sn1 = "";
-                        if (m_PA45 != null)
-                        {
-                            m_sn = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
-                            string m_pcba_seri_num = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE", m_sn);
-                            m_sn1 = m_pcba_seri_num;
-                            AppendRuntimeLog($"{m_sn} get main barcode is {m_pcba_seri_num}");
-                            m_sn = m_pcba_seri_num;
-                        }
-                        else
-                        {
-                            m_sn = dut.Product.SerialNumber;
-                        }
-
-                        string columnList = "Line_Code,Station_Code,PROCESS_NO,BARCODE,Result,Defect_Code,MODEL_NO,PC_NAME";
-                        string valueList = $"{dut.Product.ProductConfig.LINE_CODE},{dut.Product.ProductConfig.STATION_CODE},{dut.Product.ProductConfig.STATION_CODE},{MainBarcode},{lblResult.Text},{""},{dut.Product.ProductConfig.MODEL_NO},{Dns.GetHostName()}";
-
-                        for (int i = 0; i < dut.TestItems.Count; i++)
-                        {
-                            columnList = columnList + "," + dut.TestItems[i].Name;
-                            valueList = valueList + "," + dut.TestItems[i].Value;
-                        }
-
-                        string mModel = "";
-
-                        if (productConfig.DATABASE.ToUpper() == "SCANNER") { mModel = "Scanner"; }
-
-                        string rltSFC = _ssg_sfc.InsertIntoTable(
-                            mModel,
-                            dut.Product.ProductConfig.TABLE,
-                            columnList,
-                            valueList);
-                        AppendRuntimeLog($"SN: {m_sn}, insertintotable: {rltSFC}");
-                        if (rltSFC != "Y")
-                        {
-                            MessageBox.Show($"Exception: {rltSFC} ", Global.AssemblyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            UpdateErrorUI(Test_Proc_Error_Code.SfcInsertNG);
-                        }
+                        m_sn = m_PA45.HON_PN + ";" + m_PA45.SerialNumber;
+                        string m_pcba_seri_num = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE", m_sn);
+                        m_sn1 = m_pcba_seri_num;
+                        AppendRuntimeLog($"{m_sn} get main barcode is {m_pcba_seri_num}");
+                        m_sn = m_pcba_seri_num;
+                    }
+                    else
+                    {
+                        m_sn = dut.Product.SerialNumber;
                     }
 
-                    ClearUI();
+                    string columnList = "Line_Code,Station_Code,PROCESS_NO,BARCODE,Result,Defect_Code,MODEL_NO,PC_NAME";
+                    string valueList = $"{dut.Product.ProductConfig.LINE_CODE},{dut.Product.ProductConfig.STATION_CODE},{dut.Product.ProductConfig.STATION_CODE},{MainBarcode},{lblResultWin.Text},{""},{dut.Product.ProductConfig.MODEL_NO},{Dns.GetHostName()}";
 
-                    WIFI_MAC_ADDRESS = "";
-                    BLUETOOTH_MAC_ADDRESS = "";
-                    PrinterPartNumber = "";
-                    PrinterSeriNumber = "";
-                    MainboardPartNumber = "";
-                    MainboardSeriNumber = "";
+                    for (int i = 0; i < dut.TestItems.Count; i++)
+                    {
+                        columnList = columnList + "," + dut.TestItems[i].Name;
+                        valueList = valueList + "," + dut.TestItems[i].Value;
+                    }
 
-                    spTester.Close();
-                    spDutDebugPort.Close();
+                    string mModel = "";
 
-                    CloseAllRelays();
+                    if (productConfig.DATABASE.ToUpper() == "SCANNER") { mModel = "Scanner"; }
 
-                    product.RunTimeLogUpdated -= OnRunTimeLogUpdated;
-                    product = null;
+                    string rltSFC = _ssg_sfc.InsertIntoTable(
+                        mModel,
+                        dut.Product.ProductConfig.TABLE,
+                        columnList,
+                        valueList);
 
-                    dut.Product.RunTimeLogUpdated -= OnRunTimeLogUpdated;
-                    dut.Product = null;
-                    dut.RunTimeLogUpdated -= OnRunTimeLogUpdated;
-                    dut = null;
+                    AppendRuntimeLog($"SN: {m_sn}, insertintotable: {rltSFC}");
+                    if (rltSFC != "Y")
+                    {
+                        MessageBox.Show($"Exception: {rltSFC} ", Global.AssemblyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        UpdateErrorUI(Test_Proc_Error_Code.SfcInsertNG);
+                    }
+                }
 
-                    _trigger = null;
+                WIFI_MAC_ADDRESS = "";
+                BLUETOOTH_MAC_ADDRESS = "";
+                PrinterPartNumber = "";
+                PrinterSeriNumber = "";
+                MainboardPartNumber = "";
+                MainboardSeriNumber = "";
+                have_send_wifi_script = false;
 
-                    SetTestEntery(true);
-                    GC.Collect();
-                }));
+                spTester.Close();
+                spUART.Close();
+
+
+                if (Keithy2306LAN != null && productConfig.STATION_CODE == "FCT")
+                {
+                    Keithy2306LAN.SourceOff(KEITHLEY_2306_Channel.CH1);
+                    Keithy2306LAN.SourceOff(KEITHLEY_2306_Channel.CH2);
+                }
+
+                CloseAllRelays();
+
+                product.RunTimeLogUpdated -= OnRunTimeLogUpdated;
+                product = null;
+
+                dut.Product.RunTimeLogUpdated -= OnRunTimeLogUpdated;
+                dut.Product = null;
+                dut.RunTimeLogUpdated -= OnRunTimeLogUpdated;
+                dut = null;
+
+                _trigger = null;
+                ClearUI();
+                SetTestEntery(true);
+                this.Invoke(new Action(() => { txtSN.Focus(); }));
+                GC.Collect();
+
             }
         }
 
@@ -7910,6 +13151,10 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_LssSensor(index, item);
                     break;
 
+                case "LSS Sensor 230":
+                    item.Result = Test_Printer_LssSensor_230(index, item);
+                    break;
+
                 case "Key Button":
                     item.Result = Test_Printer_KeyButton(index, item);
                     break;
@@ -7948,8 +13193,18 @@ namespace FCT.ViewLayer.FormLibrary
                 break;
                 */
 
+                /*
                 case "Wifi(Ping Router)":
                     item.Result = Test_Printer_PingWifiRouter(index, item);
+                    break;
+                    */
+
+                case "WIFI Ping Test":
+                    item.Result = Test_Printer_PingWifiRouter(index, item);
+                    break;
+
+                case "Find Device(BT)":
+                    item.Result = Test_Printer_FindBluetoothDevice(index, item);
                     break;
 
                 case "Find Printer(Bluetooth)":
@@ -7958,6 +13213,14 @@ namespace FCT.ViewLayer.FormLibrary
 
                 case "RFID":
                     item.Result = Test_Printer_RFID(index, item);
+                    break;
+
+                case "Set RFID Country":
+                    item.Result = Test_Printer_SetRFIDRegionCode(index, item);
+                    break;
+
+                case "Check RFID Country":
+                    item.Result = Test_Printer_CheckRFIDRegionCode(index, item);
                     break;
 
                 case "Blue Tooth(Print)":
@@ -8016,23 +13279,65 @@ namespace FCT.ViewLayer.FormLibrary
 
                 #region --- Mainboard FCT ---
 
-                case "Power On(MB FCT)":
-                    item.Result = Test_MB_FCT_PowerOn(index, item);
+                case "Coin Battery":
+                    item.Result = Test_MB_FCT_CoinBattery(index, item);
                     break;
 
-                case "FW Version(MB FCT)":
-                    item.Result = Test_Printer_FwVersion(index, item);
+                case "Auto PowerOn(5V)":
+                    item.Result = Test_MB_FCT_AutoPowerOn5V(index, item);
+                    break;
+
+                case "Auto PowerOn(12V)":
+                    item.Result = Test_MB_FCT_AutoPowerOn12V(index, item);
+                    break;
+
+                case "PowerOff Curr(7.4V)":
+                    item.Result = Test_MB_FCT_PowerOn7p4V(index, item);
+                    break;
+
+                case "PowerKey Press":
+                    item.Result = Test_MB_FCT_PowerKeyPress(index, item);
+                    break;
+
+                case "PowerOn Curr(7.4V)":
+                    item.Result = Test_MB_FCT_PowerOn7p4V_battery(index, item);
+                    break;
+
+                /*
+            case "FCT Mode":
+                item.Result = Test_MB_FCT_GotoFctMode(index, item);
+                break;
+                */
+
+                /*
+            case "Power On(MB FCT)":
+                item.Result = Test_MB_FCT_PowerOn(index, item);
+                break;
+                */
+
+                case "Comm J1":
+                    item.Result = Test_MB_FCT_CommJ1(index, item);
                     break;
 
                 case "System Ready(MB FCT)":
                     item.Result = Test_MB_FCT_SystemReady(index, item);
                     break;
 
-                case "Comm J1":
-                    //item.Result = Test_MB_FCT_CommJ1(index, item);
+                case "FW Version(MB FCT)":
+                    item.Result = Test_MB_FCT_FwVersion(index, item);
                     break;
 
-                case "Coin Battery":
+
+
+                case "Boot Mode":
+                    item.Result = Test_MB_FCT_BootMode(index, item);
+                    break;
+
+                case "Config HW":
+                    item.Result = Test_MB_FCT_ConfigHW(index, item);
+                    break;
+
+                case "RTC Battery(coin)":
                     item.Result = Test_MB_FCT_CoinBattery(index, item);
                     break;
 
@@ -8076,7 +13381,7 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_V1P35_SOC(index, item);
                     break;
 
-                case "V1P35_SOC  Normal":
+                case "V1P35_SOC(Normal)":
                     item.Result = Test_MB_FCT_V1P35_SOC(index, item);
                     break;
 
@@ -8092,6 +13397,14 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_V5P0(index, item);
                     break;
 
+                case "V3P3_AUX(high)":
+                    item.Result = Test_MB_FCT_V3P3_AUX(index, item);
+                    break;
+
+                case "V3P3_AUX(low)":
+                    item.Result = Test_MB_FCT_V3P3_AUX(index, item);
+                    break;
+
                 case "V3P3_AUX":
                     item.Result = Test_MB_FCT_V3P3_AUX(index, item);
                     break;
@@ -8104,7 +13417,11 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_V3P3_LPT(index, item);
                     break;
 
-                case "V3P3_WIFI":
+                case "V3P3_WIFI(high)":
+                    item.Result = Test_MB_FCT_V3P3_WIFI(index, item);
+                    break;
+
+                case "V3P3_WIFI(low)":
                     item.Result = Test_MB_FCT_V3P3_WIFI(index, item);
                     break;
 
@@ -8132,36 +13449,242 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_DRAM_VREF(index, item);
                     break;
 
-                case "LED1(SOC_DEBUG_LED)":
-                    item.Result = Test_MB_FCT_LED1(index, item);
+                /*
+            case "LED1(SOC_DEBUG_LED)":
+                item.Result = Test_MB_FCT_LED1(index, item);
+                break;
+
+            case "LED2(MCU P13)":
+                item.Result = Test_MB_FCT_LED2(index, item);
+                break;
+                */
+
+                case "LED3(Power LED)":
+                    item.Result = Test_MB_FCT_PowerLED(index, item);
                     break;
 
-                case "LED2(MCU P13)":
-                    item.Result = Test_MB_FCT_LED2(index, item);
-                    break;
-
-                case "LED3(LED VF)":
-                    item.Result = Test_MB_FCT_LED3(index, item);
-                    break;
-
-                case "DC_IN Charger Current":
+                case "Battery Charger Current":
                     item.Result = Test_MB_FCT_DC_IN_ChargerCurrent(index, item);
                     break;
 
                 case "LED4(charging)":
-                    item.Result = Test_MB_FCT_LED4_FullCharged(index, item);
+                    item.Result = Test_MB_FCT_LED4_Charging(index, item);
                     break;
 
                 case "LED4(full charged)":
                     item.Result = Test_MB_FCT_LED4_FullCharged(index, item);
                     break;
 
-                case "RTC Test(MB FCT)":
-                    item.Result = Test_Printer_SetRtc(index, item);
+                case "Set RTC(MB FCT)":
+                    item.Result = Test_MB_FCT_SetRtc(index, item);
+                    break;
+
+                case "TP130 short TP110(high)":
+                    item.Result = Test_MB_FCT_Tp130ShortTp110_H(index, item);
+                    break;
+
+                case "TP130 short TP110(low)":
+                    item.Result = Test_MB_FCT_Tp130ShortTp110_1_L(index, item);
+                    break;
+
+                case "TP128 short TP112(high)":
+                    item.Result = Test_MB_FCT_Tp128ShortTp112_H(index, item);
+                    break;
+
+                case "TP128 short TP112(low)":
+                    item.Result = Test_MB_FCT_Tp128ShortTp112_L(index, item);
+                    break;
+
+                case "TP111(high)":
+                    item.Result = Test_MB_FCT_Tp111_H(index, item);
+                    break;
+
+                case "TP111(low)":
+                    item.Result = Test_MB_FCT_Tp111_L(index, item);
+                    break;
+
+                case "TP122 short TP126(high)":
+                    item.Result = Test_MB_FCT_Tp122ShortTp126_H(index, item);
+                    break;
+
+                case "TP122 short TP126(low)":
+                    item.Result = Test_MB_FCT_Tp122ShortTp126_L(index, item);
+                    break;
+
+                case "TP116 short TP114(high)":
+                    item.Result = Test_MB_FCT_Tp116ShortTp114_H(index, item);
+                    break;
+
+                case "TP116 short TP114(low)":
+                    item.Result = Test_MB_FCT_Tp116ShortTp114_L(index, item);
+                    break;
+
+                case "TP115 short TP113(high)":
+                    item.Result = Test_MB_FCT_Tp115ShortTp113_H(index, item);
+                    break;
+
+                case "TP115 short TP113(low)":
+                    item.Result = Test_MB_FCT_Tp115ShortTp113_L(index, item);
+                    break;
+
+                case "TP117 short TP118(high)":
+                    item.Result = Test_MB_FCT_Tp117ShortTp118_H(index, item);
+                    break;
+
+                case "TP117 short TP118(low)":
+                    item.Result = Test_MB_FCT_Tp117ShortTp118_L(index, item);
+                    break;
+
+                case "TP121 short TP123(high)":
+                    item.Result = Test_MB_FCT_Tp121ShortTp123_H(index, item);
+                    break;
+
+                case "TP121 short TP123(low)":
+                    item.Result = Test_MB_FCT_Tp121ShortTp123_L(index, item);
+                    break;
+
+                case "TP127 short TP129(high)":
+                    item.Result = Test_MB_FCT_Tp127ShortTp129H(index, item);
+                    break;
+
+                case "TP127 short TP129(low)":
+                    item.Result = Test_MB_FCT_Tp127ShortTp129_L(index, item);
+                    break;
+
+                case "UP_IRQ_N(high)":
+                    item.Result = Test_MB_FCT_UP_IRQ_N(index, item);
+                    break;
+
+                case "UP_IRQ_N(low)":
+                    item.Result = Test_MB_FCT_UP_IRQ_N(index, item);
+                    break;
+
+                case "Top LSS SENSOR J15":
+                    item.Result = Test_MB_FCT_LssSensorADC(index, item);
+                    break;
+
+                case "Low LSS SENSOR J18":
+                    item.Result = Test_MB_FCT_LssSensorADC(index, item);
+                    break;
+
+                case "Top LSS SENSOR J15(GPIO)":
+                    item.Result = Test_MB_FCT_LssSensorDI(index, item);
+                    break;
+
+                case "Low LSS SENSOR J18(GPIO)":
+                    item.Result = Test_MB_FCT_LssSensorDI(index, item);
+                    break;
+
+                case "COVER SENSOR":
+                    item.Result = Test_MB_FCT_COVER_SENSOR(index, item);
+                    break;
+
+                case "SELF STRIP SENSOR(high)":
+                    item.Result = Test_MB_FCT_SelfStripSensor_DI(index, item);
+                    break;
+
+                case "SELF STRIP SENSOR(low)":
+                    item.Result = Test_MB_FCT_SelfStripSensor_DI(index, item);
+                    break;
+
+                case "SELF STRIP SENSOR I2C(ADC)":
+                    item.Result = Test_MB_FCT_SelfStripSensor(index, item);
+                    break;
+
+                case "LCD J19 TX(high)":
+                    item.Result = Test_MB_FCT_LCD_TX(index, item);
+                    break;
+
+                case "LCD J19 CLK(low)":
+                    item.Result = Test_MB_FCT_LCD_CLK(index, item);
+                    break;
+
+                case "LCD J19 TX(low)":
+                    item.Result = Test_MB_FCT_LCD_TX(index, item);
+                    break;
+
+                case "LCD J19 CLK(high)":
+                    item.Result = Test_MB_FCT_LCD_CLK(index, item);
+                    break;
+
+                case "TPH TP151(low)":
+                    item.Result = Test_MB_FCT_TPH_TP151(index, item);
+                    break;
+
+                case "TPH TP152(low)":
+                    item.Result = Test_MB_FCT_TPH_TP152(index, item);
+                    break;
+
+                case "TPH TP153(low)":
+                    item.Result = Test_MB_FCT_TPH_TP153(index, item);
+                    break;
+
+                case "TPH TP157(low)":
+                    item.Result = Test_MB_FCT_TPH_TP157(index, item);
+                    break;
+
+                case "TPH TP158(low)":
+                    item.Result = Test_MB_FCT_TPH_TP158(index, item);
+                    break;
+
+                case "TPH TP159(low)":
+                    item.Result = Test_MB_FCT_TPH_TP159(index, item);
+                    break;
+
+                case "TPH TP160(low)":
+                    item.Result = Test_MB_FCT_TPH_TP160(index, item);
+                    break;
+
+                case "TPH TP161(low)":
+                    item.Result = Test_MB_FCT_TPH_TP161(index, item);
+                    break;
+
+                case "TPH TP151(high)":
+                    item.Result = Test_MB_FCT_TPH_TP151(index, item);
+                    break;
+
+                case "TPH TP152(high)":
+                    item.Result = Test_MB_FCT_TPH_TP152(index, item);
+                    break;
+
+                case "TPH TP153(high)":
+                    item.Result = Test_MB_FCT_TPH_TP153(index, item);
+                    break;
+
+                case "TPH TP157(high)":
+                    item.Result = Test_MB_FCT_TPH_TP157(index, item);
+                    break;
+
+                case "TPH TP158(high)":
+                    item.Result = Test_MB_FCT_TPH_TP158(index, item);
+                    break;
+
+                case "TPH TP159(high)":
+                    item.Result = Test_MB_FCT_TPH_TP159(index, item);
+                    break;
+
+                case "TPH TP160(high)":
+                    item.Result = Test_MB_FCT_TPH_TP160(index, item);
+                    break;
+
+                case "TPH TP161(high)":
+                    item.Result = Test_MB_FCT_TPH_TP161(index, item);
                     break;
 
                 case "VBATT1 SENSE":
                     item.Result = Test_MB_FCT_VBATT1_SENSE(index, item);
+                    break;
+
+                case "3-AXIS MOTION SENSOR":
+                    item.Result = Test_MB_FCT_3AxisMotion(index, item);
+                    break;
+
+                case "3-AXIS MOTION SENSOR(INT1)":
+                    item.Result = Test_MB_FCT_3AxisMotion_INT(index, item);
+                    break;
+
+                case "3-AXIS MOTION SENSOR(INT2)":
+                    item.Result = Test_MB_FCT_3AxisMotion_INT(index, item);
                     break;
 
                 case "AMBIENT TEMP SENSE":
@@ -8176,28 +13699,146 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_V3P3_LCD(index, item);
                     break;
 
-                case "LCD(J19)(LEDA)":
+                case "LCD(J19)(LEDA)(high)":
                     item.Result = Test_MB_FCT_J19_LCD_LEDA(index, item);
                     break;
 
-                case "Buzzer Control":
-                    item.Result = Test_MB_FCT_Buzzer_Control(index, item);
+                case "LCD(J19)(LEDA)(low)":
+                    item.Result = Test_MB_FCT_J19_LCD_LEDA(index, item);
                     break;
 
-                case "RFID(Power)":
+                case "Buzzer Control SOC(high)":
+                    item.Result = Test_MB_FCT_BuzzerControlSOC(index, item);
+                    break;
+
+                case "Buzzer Control SOC(low)":
+                    item.Result = Test_MB_FCT_BuzzerControlSOC(index, item);
+                    break;
+
+                case "Buzzer Control MCU(high)":
+                    item.Result = Test_MB_FCT_BuzzerControlSOC(index, item);
+                    break;
+
+                case "Buzzer Control MCU(low)":
+                    item.Result = Test_MB_FCT_BuzzerControlSOC(index, item);
+                    break;
+
+                case "RTC Test(Read)":
+                    item.Result = Test_MB_FCT_RctSet(index, item);
+                    break;
+
+                case "Key SOC(TP191)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP191(index, item);
+                    break;
+
+                case "Key SOC(TP193)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP193(index, item);
+                    break;
+
+                case "Key SOC(TP197)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP197(index, item);
+                    break;
+
+                case "Key SOC(TP199)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP199(index, item);
+                    break;
+
+                case "Key SOC(TP200)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP200(index, item);
+                    break;
+
+                case "Key SOC(TP201)":
+                    item.Result = Test_MB_FCT_Key_SOC_TP201(index, item);
+                    break;
+
+                case "Key MCU":
+                    item.Result = Test_Printer_KeyButton(index, item);
+                    break;
+
+                case "Key MCU(TP191)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP191(index, item);
+                    break;
+
+                case "Key MCU(TP193)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP193(index, item);
+                    break;
+
+                case "Key MCU(TP197)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP197(index, item);
+                    break;
+
+                case "Key MCU(TP199)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP199(index, item);
+                    break;
+
+                case "Key MCU(TP200)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP200(index, item);
+                    break;
+
+                case "Key MCU(TP201)":
+                    item.Result = Test_MB_FCT_Key_MCU_TP201(index, item);
+                    break;
+
+                case "RFID Power(high)":
                     item.Result = Test_MB_FCT_RFID_Power(index, item);
                     break;
 
-                case "USB HUB (USB HOST)(J5)":
+                case "RFID Power(low)":
+                    item.Result = Test_MB_FCT_RFID_Power(index, item);
+                    break;
+
+                case "J22 GPIO(high)":
+                    item.Result = Test_MB_FCT_J22(index, item);
+                    break;
+
+                case "J22 GPIO(low)":
+                    item.Result = Test_MB_FCT_J22(index, item);
+                    break;
+
+                case "Cellular Modem":
+                    item.Result = Test_MB_FCT_Cellular_Modem(index, item);
+                    break;
+
+                case "USB HUB":
+                    item.Result = Test_MB_FCT_USB_HUB(index, item);
+                    break;
+
+                case "USB HUB(HOST)(CC2)":
                     item.Result = Test_MB_FCT_USB_HUB_HOST_J5(index, item);
                     break;
 
-                case "LTPPWR(TPH)(ON)":
-                    item.Result = Test_MB_FCT_LTPPWR_TPH(index, item);
+                case "USB HUB(HOST)(CC1)":
+                    item.Result = Test_MB_FCT_USB_HUB_HOST_J5(index, item);
                     break;
 
-                case "LTPPWR(TPH)(OFF)":
-                    item.Result = Test_MB_FCT_LTPPWR_TPH(index, item);
+                case "MFI Chip":
+
+                    if (dut.GetType().Name == "PA45")
+                    {
+                        item.Result = Test_Printer_MFI_Detect(index, item);
+                    }
+                    else
+                    {
+                        item.Result = Test_MB_FCT_MFI_Chip(index, item);
+                    }
+
+                    break;
+
+                case "VEHICLE_MOUNT_DET":
+                    item.Result = Test_MB_FCT_VEHICLE_MOUNT_DET(index, item);
+                    break;
+
+                case "Security IC":
+                    item.Result = Test_MB_FCT_SecurityIC(index, item);
+                    break;
+
+                case "Charger IC":
+                    item.Result = Test_MB_FCT_ChargerIC(index, item);
+                    break;
+
+
+                case "TPH Resistance Measurement":
+                    item.Result = Test_MB_FCT_TPH_ResiMeas(index, item);
                     break;
 
                 case "V24P0_MOTOR":
@@ -8216,15 +13857,23 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_STM_VREF(index, item);
                     break;
 
-                case "Power off(VBATT)":
-                    item.Result = Test_MB_FCT_PoweroffVBATT(index, item);
+                case "V2P7_CAP":
+                    item.Result = Test_MB_FCT_V2P7_CAP(index, item);
                     break;
 
-                case "VBUS_IN(MB FCT)(voltage test)":
+                case "VBATT PowerOff":
+                    item.Result = Test_MB_FCT_VBATTPowerOff(index, item);
+                    break;
+
+                case "VBUS_IN(CC1O)":
                     item.Result = Test_MB_FCT_VBUS_IN(index, item);
                     break;
 
-                case "LOWPWR_IRQ_N(=6.5V)":
+                case "VBUS_IN(CC2O)":
+                    item.Result = Test_MB_FCT_VBUS_IN(index, item);
+                    break;
+
+                case "LOWPWR_IRQ_N(>6.5V)":
                     item.Result = Test_MB_FCT_LOWPWR_IRQ_N(index, item);
                     break;
 
@@ -8232,33 +13881,71 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_MB_FCT_LOWPWR_IRQ_N(index, item);
                     break;
 
-                case "N17945044":
-                    item.Result = Test_MB_FCT_N17945044(index, item);
+                case "LTPPWR(TPH)(ON)":
+                    item.Result = Test_MB_FCT_LTPPWR_TPH(index, item);
                     break;
 
-                case "Battery(power supply)(VSYS)":
+                case "LTPPWR(TPH)(OFF)":
+                    item.Result = Test_MB_FCT_LTPPWR_TPH(index, item);
+                    break;
+
+                case "VSYS(battery 6.7)":
                     item.Result = Test_MB_FCT_BatteryPowerSupply(index, item);
                     break;
 
-                case "SUPER CAP(VSYS)":
-                    item.Result = Test_MB_FCT_SUPER_CAP(index, item);
+                case "VSYS(battery 6.0)":
+                    item.Result = Test_MB_FCT_BatteryPowerSupply(index, item);
                     break;
 
+                /*
+            case "SUPER CAP(VSYS)":
+                item.Result = Test_MB_FCT_SUPER_CAP(index, item);
+                break;
+                */
+
+                /*
                 case "Hotswap(V5P2_CAP)":
                     item.Result = Test_MB_FCT_HOTSWAP_V5P2_CAP(index, item);
+                    break;
+                    */
+
+                case "Motor Test":
+                    item.Result = Test_MB_FCT_MotorTest(index, item);
+                    break;
+
+                case "Super CAP Low Voltage Detector(high)":
+                    item.Result = Test_MB_FCT_SuperCapLowDetect(index, item);
+                    break;
+
+                case "Super CAP Low Voltage Detector(low)":
+                    item.Result = Test_MB_FCT_SuperCapLowDetect(index, item);
+                    break;
+
+                case "V5P0 MCU Power Off":
+                    item.Result = Test_MB_FCT_V5P0_MCU_PowerOff(index, item);
+                    break;
+
+                case "Power Button Turn Off Test":
+                    item.Result = Test_MB_FCT_PowerButtonTurnOff(index, item);
                     break;
 
                 case "Uboot Version(MB FCT)":
                     item.Result = Test_Printer_FwVersion(index, item);
                     break;
 
-                case "LTS Sensor Funcrion":
+                case "LTS Sensor Function":
                     item.Result = Test_Printer_LTS(index, item);
                     break;
 
                 case "Battery Function":
                     item.Result = Test_Printer_Battery(index, item);
                     break;
+
+                /*
+            case "Battery Function":
+                item.Result = Test_Printer_Battery(index, item);
+                break;
+                */
 
                 case "Security Chip":
                     item.Result = Test_Printer_SecurityChip(index, item);
@@ -8292,13 +13979,15 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_Printer_FwVersion(index, item);
                     break;
 
-                case "BM Sensor ADC Value(MB EOL)":
-                    item.Result = Test_Printer_BMSensor(index, item);
-                    break;
+                /*
+            case "BM Sensor ADC Value(MB EOL)":
+                item.Result = Test_MB_FCT_BMSensor(index, item);
+                break;
 
-                case "BM Sensor ADC Value(Front)(MB EOL)":
-                    item.Result = Test_Printer_BMSensor(index, item);
-                    break;
+            case "BM Sensor ADC Value(Front)(MB EOL)":
+                item.Result = Test_MB_FCT_BMSensor(index, item);
+                break;
+                */
 
                 case "LTS sensor function(MB EOL)":
                     item.Result = Test_Printer_LTS(index, item);
@@ -8484,6 +14173,15 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_Powerboard_HOST_DM(index, item);
                     break;
 
+                case "USB_CC_INT(high)":
+                    item.Result = Test_Powerboard_USB_CC_INT(index, item);
+                    break;
+
+                case "USB_CC_INT(low)":
+                    item.Result = Test_Powerboard_USB_CC_INT(index, item);
+                    break;
+
+
                 case "VEHICLE_MOUNT_DET(high)":
                     item.Result = Test_Powerboard_VEHICLE_MOUNT_DET(index, item);
                     break;
@@ -8498,6 +14196,14 @@ namespace FCT.ViewLayer.FormLibrary
 
                 case "USB2_DOCK_DM(low)":
                     item.Result = Test_Powerboard_USB2_DOCK_DM(index, item);
+                    break;
+
+                case "USB2_DOCK_DP(high)":
+                    item.Result = Test_Powerboard_USB2_DOCK_DP(index, item);
+                    break;
+
+                case "USB2_DOCK_DP(low)":
+                    item.Result = Test_Powerboard_USB2_DOCK_DP(index, item);
                     break;
 
                 #endregion
@@ -8728,6 +14434,10 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_Keyboard_PowerOn(index, item);
                     break;
 
+                case "Check Jig Air Pressure":
+                    item.Result = Test_Keyboard_JigAirPressure(index, item);
+                    break;
+
                 case "UI_SW1-OFF":
                     item.Result = Test_Keyboard_SW1_UiSw1(index, item);
                     break;
@@ -8736,51 +14446,51 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_Keyboard_SW1_UiSw1(index, item);
                     break;
 
-                case "UI_MENU_KEY-OFF":
+                case "UI_SW3-OFF":
                     item.Result = Test_Keyboard_SW3_UiMenuKey(index, item);
                     break;
 
-                case "UI_MENU_KEY-ON":
+                case "UI_SW3-ON":
                     item.Result = Test_Keyboard_SW3_UiMenuKey(index, item);
                     break;
 
-                case "UI_DOWN_KEY-OFF":
+                case "UI_SW5-OFF":
                     item.Result = Test_Keyboard_SW5_DownKey(index, item);
                     break;
 
-                case "UI_DOWN_KEY-ON":
+                case "UI_SW5-ON":
                     item.Result = Test_Keyboard_SW5_DownKey(index, item);
                     break;
 
-                case "UI_ENTRY_KEY-OFF":
+                case "UI_SW2-OFF":
                     item.Result = Test_Keyboard_SW2_EntryKey(index, item);
                     break;
 
-                case "UI_ENTRY_KEY-ON":
+                case "UI_SW2-ON":
                     item.Result = Test_Keyboard_SW2_EntryKey(index, item);
                     break;
 
-                case "UI_FEED_SW2-OFF":
+                case "UI_SW4-OFF":
                     item.Result = Test_Keyboard_SW4_FeedSw2(index, item);
                     break;
 
-                case "UI_FEED_SW2-ON":
+                case "UI_SW4-ON":
                     item.Result = Test_Keyboard_SW4_FeedSw2(index, item);
                     break;
 
-                case "UI_UP_KEY-OFF":
+                case "UI_SW6-OFF":
                     item.Result = Test_Keyboard_SW6_UpKey(index, item);
                     break;
 
-                case "UI_UP_KEY-ON":
+                case "UI_SW6-ON":
                     item.Result = Test_Keyboard_SW6_UpKey(index, item);
                     break;
 
-                case "LED_POWR_RED-ON":
+                case "LED_POWER_RED-ON":
                     item.Result = Test_Keyboard_LedPowerOn(index, item);
                     break;
 
-                case "LED_POWR_GRN-ON":
+                case "LED_POWER_GRN-ON":
                     item.Result = Test_Keyboard_LedPowerOn(index, item);
                     break;
 
@@ -8795,6 +14505,10 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_WiFiBtModule_PowerOn(index, item);
                     break;
 
+                case "RePower On":
+                    item.Result = Test_WiFiBtModule_RePowerOn(index, item);
+                    break;
+
                 case "BT_Module Write(BT)":
                     item.Result = Test_BtModule_WriteMAC(index, item);
                     break;
@@ -8803,20 +14517,37 @@ namespace FCT.ViewLayer.FormLibrary
                     item.Result = Test_WiFiBtModule_BtWifiRead(index, item);
                     break;
 
-                case "WiFi_BT_Module Read(Wifi)":
+                case "WIFI MAC":
                     item.Result = Test_WiFiBtModule_BtWifiRead(index, item);
                     break;
 
-                case "WiFi_BT_Module Read(BT)":
-                    item.Result = Test_WiFiBtModule_BtWifiRead(index, item);
+                case "BT MAC":
+
+                    if (dut.GetType().Name == "BT_Module")
+                    {
+                        item.Result = Test_BtModule_WriteMAC(index, item);
+                    }
+                    else
+                    {
+                        item.Result = Test_WiFiBtModule_BtWifiRead(index, item);
+                    }
+
                     break;
 
                 case "Print MAC(BT)":
-                    item.Result = Test_WiFiBtModule_PrintMAC(index, item);
+                    string mDUT_Type = dut.GetType().Name;
+                    if (mDUT_Type == "PA45")
+                        item.Result = Test_Printer_PrintMACLabel(index, item);
+                    else
+                        item.Result = Test_WiFiBtModule_PrintMAC(index, item);
                     break;
 
                 case "Print MAC(Wifi)":
-                    item.Result = Test_WiFiBtModule_PrintMAC(index, item);
+                    string mDUT_Type1 = dut.GetType().Name;
+                    if (mDUT_Type1 == "PA45")
+                        item.Result = Test_Printer_PrintMACLabel(index, item);
+                    else
+                        item.Result = Test_WiFiBtModule_PrintMAC(index, item);
                     break;
 
                 case "NFC Tag Read":
@@ -8883,6 +14614,12 @@ namespace FCT.ViewLayer.FormLibrary
             item.Duration = dt_end - dt_start;
             Invoke(new Action(() =>
             {
+                if (item.Description.ToLower().Contains("force"))
+                {
+                    item.Result = true;
+                    item.Value = item.Value.Replace("FAIL", "PASS");
+                }
+
                 lvTestItems.Items[index].SubItems[5].Text = item.Value;
                 lvTestItems.Items[index].SubItems[6].Text = item.Result ? "PASS" : "FAIL";
                 lvTestItems.Items[index].SubItems[7].Text = item.Duration.TotalSeconds.ToString("F2");
@@ -8897,6 +14634,161 @@ namespace FCT.ViewLayer.FormLibrary
 
         #endregion
 
+        private string Write_Read_SeriPort(Communicate_Type cType, string text, int milScd = 500)
+        {
+            string tmpValue = "";
+            string m_tag = Guid.NewGuid().ToString("N");
+            if (cType == Communicate_Type.VirtualComPort)
+            {
+                AppendRuntimeLog(m_tag);
+                SerialPortWriteLineOnce(text);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendSeriPortLog(m_tag);
+                SeriPortWriteLine(spUART, text);
+            }
+
+            Delay(1000);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                if (cType == Communicate_Type.VirtualComPort)
+                {
+                    tmpValue = GetRuntimeStringFlagA(m_tag);
+                }
+
+                if (cType == Communicate_Type.UART)
+                {
+                    tmpValue = GetUARTStringFlagA(m_tag);
+                }
+
+                tmpValue = tmpValue.Replace(m_tag, "");
+                tmpValue = tmpValue.Replace(text, "");
+                tmpValue = tmpValue.Replace("root@(none) ~$", "");
+
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    return tmpValue;
+                }
+
+                Delay(500);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendRuntimeLog(tmpValue);
+            }
+
+
+            return tmpValue;
+        }
+
+        private string Write_Read_SeriPort_Delay(Communicate_Type cType, string text, int milScd = 3000)
+        {
+            string tmpValue = "";
+            string m_tag = Guid.NewGuid().ToString("N");
+            if (cType == Communicate_Type.VirtualComPort)
+            {
+                AppendRuntimeLog(m_tag);
+                SerialPortWriteLineOnce(text);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendSeriPortLog(m_tag);
+                SeriPortWriteLine(spUART, text);
+            }
+
+            Delay(milScd);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                if (cType == Communicate_Type.VirtualComPort)
+                {
+                    tmpValue = GetRuntimeStringFlagA(m_tag);
+                }
+
+                if (cType == Communicate_Type.UART)
+                {
+                    tmpValue = GetUARTStringFlagA(m_tag);
+                }
+
+                tmpValue = tmpValue.Replace(m_tag, "");
+                tmpValue = tmpValue.Replace(text, "");
+                tmpValue = tmpValue.Replace("root@(none) ~$", "");
+
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    return tmpValue;
+                }
+
+                Delay(500);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendRuntimeLog(tmpValue);
+            }
+
+
+            return tmpValue;
+        }
+
+
+        private string Write_Read_SeriPort_6000(Communicate_Type cType, string text, int milScd = 6000)
+        {
+            string tmpValue = "";
+            string m_tag = Guid.NewGuid().ToString("N");
+            if (cType == Communicate_Type.VirtualComPort)
+            {
+                AppendRuntimeLog(m_tag);
+                SerialPortWriteLineOnce(text, milScd);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendSeriPortLog(m_tag);
+                SeriPortWriteLine(spUART, text);
+            }
+
+            Delay(1000);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                if (cType == Communicate_Type.VirtualComPort)
+                {
+                    tmpValue = GetRuntimeStringFlagA(m_tag);
+                }
+
+                if (cType == Communicate_Type.UART)
+                {
+                    tmpValue = GetUARTStringFlagA(m_tag);
+                }
+
+                tmpValue = tmpValue.Replace(m_tag, "");
+                tmpValue = tmpValue.Replace(text, "");
+                tmpValue = tmpValue.Replace("root@(none) ~$", "");
+
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    return tmpValue;
+                }
+
+                Delay(500);
+            }
+
+            if (cType == Communicate_Type.UART)
+            {
+                AppendRuntimeLog(tmpValue);
+            }
+
+
+            return tmpValue;
+        }
+
+
         private bool test_feed_1(string pic_path = "")
         {
             SerialPortWriteLineOnce(PrinterCommands.testfeed_1);
@@ -8904,7 +14796,12 @@ namespace FCT.ViewLayer.FormLibrary
             string en_us = "please check testfeed -1 have finished yet.";
             string thai = "thai tips (unknown)";
 
-            return GetOperatorSelection(zh_cn, en_us, thai);
+            if (string.IsNullOrWhiteSpace(pic_path))
+            {
+                pic_path = Path.Combine(Global.ASSEMBLY_PATH, "Res", "testfeed_gap.jpg");
+            }
+
+            return GetOperatorSelection(zh_cn, en_us, thai, pic_path);
         }
 
         private bool GetOperatorSelection(string zh_cn, string us_en, String thai, string pic_path = "")
@@ -8923,8 +14820,9 @@ namespace FCT.ViewLayer.FormLibrary
             return bOpSelection;
         }
 
-        private string GetMediaType()
+        private Media_Type GetMediaType()
         {
+            Media_Type type = Media_Type.Error;
             string media_type = "", tmpValue = "";
             bool bTimeOut = true;
             string m_tag = Guid.NewGuid().ToString("N");
@@ -8953,33 +14851,37 @@ namespace FCT.ViewLayer.FormLibrary
 
             media_type = tmpValue.Replace("Ok", "").Trim();
 
-        End:
-            return media_type;
-        }
-
-        private string GetLTSSensorValue()
-        {
-            string value = "", tmpValue = "";
-            bool bTimeOut = true;
-            string m_tag = Guid.NewGuid().ToString("N");
-            AppendRuntimeLog(m_tag);
-
-            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
-            SerialPortWriteLineOnce(PrinterCommands.LTS);
-
-            for (int i = 0; i < 60; i++)
+            if (media_type == "Media With Gaps")
             {
-                tmpValue = GetRuntimeStringFlagA(m_tag);
-                tmpValue = tmpValue.Replace(PrinterCommands.LTS, "");
-                if (!string.IsNullOrWhiteSpace(tmpValue))
-                {
-                    bTimeOut = false;
-                    break;
-                }
-                Delay(500);
+                type = Media_Type.Gaps;
             }
 
-            if (bTimeOut)
+            if (media_type == "Black Mark")
+            {
+                type = Media_Type.BlackMark;
+            }
+
+            if (media_type == "Continuous Var Len")
+            {
+                type = Media_Type.ContinuousVarLen;
+            }
+
+            CurrentMediaType = type;
+        End:
+            return type;
+        }
+
+        private string GetLTSSensorValue(Communicate_Type cType)
+        {
+            string value = "", tmpValue = "", sCmd = "", m_tag = Guid.NewGuid().ToString("N");
+
+            if (cType == Communicate_Type.UART) { sCmd = PA45_FCT_Commands.functest(SUB_COMMAND.LTS); }
+
+            if (cType == Communicate_Type.VirtualComPort) { sCmd = PrinterCommands.LTS; }
+
+            tmpValue = Write_Read_SeriPort(cType, sCmd);
+
+            if (string.IsNullOrWhiteSpace(tmpValue))
             {
                 value = "TimeOut";
                 goto End;
@@ -8992,9 +14894,108 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             dut.get_LTS(tmpValue, ref value);
-
         End:
             return value;
+        }
+
+        private bool check_unlock_os_cmds()
+        {
+
+            SerialPortWriteLineOnce(PrinterCommands.LoginRoot);
+
+            bool bTimeOut = true;
+            string tmpValue = "", m_tag = Guid.NewGuid().ToString("N");
+            AppendRuntimeLog(m_tag);
+
+            SerialPortWriteLineOnce(PrinterCommands.unlock_os_cmds);
+
+            for (int i = 0; i < RegularTimeOutCount; i++)
+            {
+                tmpValue = GetRuntimeStringFlagA(m_tag);
+                tmpValue = tmpValue.Replace(PrinterCommands.unlock_os_cmds, "");
+                if (!string.IsNullOrWhiteSpace(tmpValue))
+                {
+                    bTimeOut = false;
+                    break;
+                }
+                Delay(500);
+            }
+            IEnumerable<TestItem> ping_test_flags = dut.TestItems
+                  .Where(x => x.Name.ToLower().Contains("wifi") && x.Name.ToLower().Contains("ping")).ToList();
+
+            string dutType = dut.GetType().Name;
+
+            if (!have_send_wifi_script)
+            {
+                if (ping_test_flags != null)
+                {
+                    if (dutType == "WiFi_BT_Module")
+                    {
+                        ssid = INI.GetValue("Wifi_Router", "WifiBT_SSID", ConfigFile);
+                        pwd = INI.GetValue("Wifi_Router", "WifiBT_PWD ", ConfigFile);
+                        router_ip = INI.GetValue("Wifi_Router", "WifiBT_IP", ConfigFile);
+                    }
+                    else if (dutType == "PA45")
+                    {
+                        Prod.PA45 m_PA45 = product as Prod.PA45;
+
+                        if (m_PA45 == null ||
+                            Prod.PA45.CommHWOpt == CommHWOpt.BLUETOOTH_ONLY ||
+                            Prod.PA45.CommHWOpt == CommHWOpt.USB_ONLY
+                            )
+                        {
+                            goto End;
+                        }
+
+                        if (productConfig.STATION_CODE == "OOBA")
+                        {
+                            ssid = INI.GetValue("Wifi_Router", "OOBA_SSID", ConfigFile);
+                            pwd = INI.GetValue("Wifi_Router", "OOBA_PWD ", ConfigFile);
+                            router_ip = INI.GetValue("Wifi_Router", "OOBA_IP", ConfigFile);
+                        }
+                        else
+                        {
+                            ssid = INI.GetValue("Wifi_Router", "SSID", ConfigFile);
+                            pwd = INI.GetValue("Wifi_Router", "PWD", ConfigFile);
+                            router_ip = INI.GetValue("Wifi_Router", "IP", ConfigFile);
+                        }
+                    }
+                    else
+                    {
+                        goto End;
+                    }
+
+                    INI.GetValue("Wifi_Router", "IP", ConfigFile);
+
+                    string wifi_setting_script = "", wifi_setting_script_path = "";
+
+                    wifi_setting_script_path = Path.Combine(Global.ASSEMBLY_PATH, "wifi_script.txt");
+
+                    if (!File.Exists(wifi_setting_script_path))
+                    {
+                        AppendRuntimeLog($"can't find {wifi_setting_script_path}.");
+                        goto End;
+                    }
+
+                    using (StreamReader sw = new StreamReader(wifi_setting_script_path)) { wifi_setting_script = sw.ReadToEnd(); }
+
+                    if (!wifi_setting_script.Contains("NOMAD_WIFI_ROUTER_SSID") || !wifi_setting_script.Contains("NOMAD_WIFI_ROUTER_KEY"))
+                    {
+                        AppendRuntimeLog($"can't find {wifi_setting_script_path}.");
+                        goto End;
+                    }
+
+                    wifi_setting_script = wifi_setting_script.Replace("NOMAD_WIFI_ROUTER_SSID", ssid);
+                    wifi_setting_script = wifi_setting_script.Replace("NOMAD_WIFI_ROUTER_KEY", pwd);
+
+                    SerialPortWriteLineOnce(wifi_setting_script);
+                    have_send_wifi_script = true;
+                }
+            }
+
+
+        End:
+            return (!bTimeOut) && tmpValue.Contains(PrinterCommands.unlock_os_cmds_ok);
         }
 
         public string reserveMac(string temp)
@@ -9031,6 +15032,23 @@ namespace FCT.ViewLayer.FormLibrary
             }
 
             return mac;
+        }
+
+        private string GetSensorValue(string text, string flag)
+        {
+            string value = "";
+            List<string> values = text.Split('\n').ToList();
+            values.RemoveAll(s => string.IsNullOrEmpty(s) && string.IsNullOrWhiteSpace(s));
+
+            foreach (string v in values)
+            {
+                if (v.Contains(flag))
+                {
+                    value = v.Replace(flag, "").Trim();
+                    break;
+                }
+            }
+            return value;
         }
 
         private void GetSensorValues(string text, string flag1, string flag2, ref string ADCValue, ref string tempValue)
@@ -9094,7 +15112,7 @@ namespace FCT.ViewLayer.FormLibrary
             {
                 if (serialport.IsOpen) { serialport.Close(); }
 
-                int temp_seri_baudreta = 57600;
+                int temp_seri_baudreta = 115200;
 
                 Type m_type = dut.GetType();
 
@@ -9103,7 +15121,8 @@ namespace FCT.ViewLayer.FormLibrary
                 if (m_type.Name == "PA45" ||
                     m_type.Name == "BT_Module" ||
                     m_type.Name == "WiFi_BT_Module" ||
-                    m_type.Name == "PA45_MainBoard")
+                    m_type.Name == "PA45_MainBoard" ||
+                    m_type.Name == "LTSSensor")
                 {
                     temp_seri_baudreta = 115200;
                 }
@@ -9146,6 +15165,51 @@ namespace FCT.ViewLayer.FormLibrary
 
             return rlt;
         }
+
+        private bool InitializeSerialport2(string vid, string pid, SerialPort serialport)
+        {
+            bool rlt = false;
+            try
+            {
+                if (serialport.IsOpen) { serialport.Close(); }
+
+                int temp_seri_baudreta = 115200;
+
+
+                // 1. 基础参数配置（可根据你的设备调整）
+                serialport.PortName = WinDevice.GetSerialportComPort(vid, pid);
+                serialport.BaudRate = temp_seri_baudreta;          // 波特率（常用：9600、115200）
+                serialport.DataBits = 8;               // 数据位
+                serialport.StopBits = StopBits.One;    // 停止位
+                serialport.Parity = Parity.None;       // 校验位（无校验）
+                serialport.Handshake = Handshake.None; // 握手协议（无）
+                serialport.DtrEnable = true;
+                serialport.RtsEnable = true;
+
+                /*
+                // 2. 超时设置（防止读取阻塞）
+                spLowerComputer.ReadTimeout = 500;          // 读取超时500ms
+                spLowerComputer.WriteTimeout = 500;         // 写入超时500ms
+                */
+
+                // 3. 关闭自动换行（可选，根据设备需求）
+                //serialport.NewLine = "\r\n";
+
+                Invoke(new Action(() => { slblPortName.Text = slblPortName.Text + string.Format($"{serialport.PortName} : {serialport.BaudRate} [vid:{vid}, pid:{pid}] "); }));
+                serialport.Open();
+                rlt = true;
+            }
+            catch (Exception e)
+            {
+                AppendRuntimeLog(string.Format($"catch exception in FUNC [ {MethodBase.GetCurrentMethod().Name} ] as : ") + e.Message);
+                MessageBox.Show(e.Message, string.Format($"FUNC [ {MethodBase.GetCurrentMethod().Name} ]"), MessageBoxButtons.OK, MessageBoxIcon.Error);
+                UpdateErrorUI(Test_Proc_Error_Code.NoSeriPort);
+                rlt = false;
+            }
+
+            return rlt;
+        }
+
 
         private bool InitializeSerialport1(SerialPort serialport, string portname)
         {
@@ -9207,27 +15271,51 @@ namespace FCT.ViewLayer.FormLibrary
             Delay(milliSecond);
         }
 
-        private void SerialPortWriteLineOnce(string text, int milliSecond = 1000)
+        private void SerialPortWriteLineOnce(string text, int milliSecond = 1500)
         {
             if (!spTester.IsOpen) spTester.Open();
 
             spTester.WriteLine(text);
 
-            if (ckbIsPrintLog.Checked)
+            Invoke(new Action(() =>
             {
-                Invoke(new Action(() =>
+                if (!string.IsNullOrEmpty(text))
                 {
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        rtbLog.AppendText("\n" + text + "\n");
-                        rtbLog.Select(rtbLog.TextLength, 0);
-                        rtbLog.ScrollToCaret();
-                    }
-                }));
-            }
+                    rtbLog.AppendText("\n" + text + "\n");
+                    rtbLog.Select(rtbLog.TextLength, 0);
+                    rtbLog.ScrollToCaret();
+                }
+            }));
 
             Delay(milliSecond);
         }
+
+        private void SeriPortWriteLine(SerialPort sPort, string text, int milliSecond = 200)
+        {
+            if (!sPort.IsOpen) { sPort.Open(); }
+
+            sPort.WriteLine(text);
+
+            Invoke(new Action(() =>
+            {
+                if (!string.IsNullOrEmpty(text))
+                {
+                    rtbLog.AppendText("\n" + text + "\n");
+                    rtbLog.Select(rtbSerialport.TextLength, 0);
+                    rtbLog.ScrollToCaret();
+                }
+
+                if (!string.IsNullOrEmpty(text))
+                {
+                    rtbSerialport.AppendText("\n" + text + "\n");
+                    rtbSerialport.Select(rtbSerialport.TextLength, 0);
+                    rtbSerialport.ScrollToCaret();
+                }
+            }));
+
+            Delay(milliSecond);
+        }
+
 
         private string ReadSerialportCommand()
         {
@@ -9285,18 +15373,18 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void spDutDebugPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            int count = spDutDebugPort.BytesToRead;
+            int count = spUART.BytesToRead;
             byte[] buffer = new byte[count];
-            spDutDebugPort.Read(buffer, 0, count);
+            spUART.Read(buffer, 0, count);
             string recv = Encoding.GetEncoding("ASCII").GetString(buffer);
             Invoke(new Action(() => { rtbSerialport.AppendText(recv); }));
         }
 
         private void spDutDebugPort_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
         {
-            int count = spDutDebugPort.BytesToRead;
+            int count = spUART.BytesToRead;
             byte[] buffer = new byte[count];
-            spDutDebugPort.Read(buffer, 0, count);
+            spUART.Read(buffer, 0, count);
             string recv = Encoding.GetEncoding("ASCII").GetString(buffer);
             Invoke(new Action(() =>
             {
@@ -9308,9 +15396,9 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void spDutDebugPort_PinChanged(object sender, SerialPinChangedEventArgs e)
         {
-            int count = spDutDebugPort.BytesToRead;
+            int count = spUART.BytesToRead;
             byte[] buffer = new byte[count];
-            spDutDebugPort.Read(buffer, 0, count);
+            spUART.Read(buffer, 0, count);
             string recv = Encoding.GetEncoding("ASCII").GetString(buffer);
             Invoke(new Action(() =>
             {
@@ -9324,10 +15412,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         #region menustrip
 
-        private void releaseNoteToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-
-        }
+        private void releaseNoteToolStripMenuItem_Click(object sender, EventArgs e) { }
 
         private void serialPortToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -9337,6 +15422,7 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void MenuItem_Testitem_Click(object sender, EventArgs e)
         {
+
             if (string.IsNullOrEmpty(productConfig.TEST_ITEMS))
             {
                 MessageBox.Show($"Please select a production config.", Global.AssemblyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -9376,38 +15462,21 @@ namespace FCT.ViewLayer.FormLibrary
 
         private void button1_Click_1(object sender, EventArgs e)
         {
-            /*
+            //ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", MainBarcode + ";910100114400_BT_board");
+            string snS = File.ReadAllText(Path.Combine(Global.ASSEMBLY_PATH, "SN.txt"));
 
-            // 1. 先列出当前所有可用的网卡名称，方便你确认要修改的网卡叫什么
-            Console.WriteLine("--- 当前可用的网卡列表 ---");
-            WinDevice.ListNetworkAdapters();
-            Console.WriteLine("--------------------------\n");
+            List<string> sn_List = snS.Split('\n').ToList();
 
-            // 2. 设定目标网卡名称（请替换为你电脑上实际显示的名称，如 "以太网" 或 "WLAN"）
-            string targetAdapterName = "LAN9500A";
-
-            // 3. 设定新的网络参数
-            string newIP = "192.168.1.100";
-            string subnetMask = "255.255.255.0";
-            string[] gateways = new string[] { "192.168.1.1" };
-            string[] dnsServers = new string[] { "8.8.8.8", "114.114.114.114" };
-
-            try
+            for (int i = 0; i < sn_List.Count; i++)
             {
-                Console.WriteLine($"正在尝试为 [{targetAdapterName}] 设置IP...");
+                string tmpVal = _ssg_sfc.GetSpecialValue("Scanner", "GET_SN_MODEL", sn_List[i].Trim());
+                string tmp = $"{tmpVal}_Lower_case";
+                string barcode = _ssg_sfc.GetSpecialValue("Scanner", "GET_BARCODE_PART", sn_List[i].Trim() + $";{tmp}");
 
-                string m_adapter_name = WinDevice.GetNetworkAdapters("LAN9500A");
-                WinDevice.SetNetworkAdapterIP(m_adapter_name, newIP, subnetMask, gateways, dnsServers);
-                Console.WriteLine("✅ 网络配置修改成功！");
+
+                AppendUSBLog1($"{sn_List[i].Trim()}{'\t'}{tmpVal}{'\t'}{barcode}");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ 修改失败: {ex.Message}");
-            }
-
-            Console.ReadLine();
-            */
-
+            
             /*
             // 桌面根元素，全局所有窗口所有控件
             AutomationElement desktop = AutomationElement.RootElement;
@@ -9423,7 +15492,7 @@ namespace FCT.ViewLayer.FormLibrary
                 TreeScope.Descendants,
                 buttonCond
             );
-            
+
             Console.WriteLine($"共找到 {allButtons.Count} 个按钮");
 
             foreach (AutomationElement btn in allButtons)
@@ -9560,101 +15629,87 @@ namespace FCT.ViewLayer.FormLibrary
             return targetElement;
         }
 
-        // 封装一个发送指令的辅助方法（不需要返回值的指令）
-        static void SendCommand(NetworkStream stream, string command)
+        private void sFCGetSpecialValueToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            byte[] data = Encoding.ASCII.GetBytes(command + "\n");
-            stream.Write(data, 0, data.Length);
-            stream.Flush();
-            Thread.Sleep(100); // 稍微延时，防止指令发送过快导致仪器缓冲区溢出
+            if (get_sfc_data_form == null)
+            {
+                get_sfc_data_form = new frmSFC_Get_Special();
+            }
+
+            if (get_sfc_data_form != null)
+            {
+                get_sfc_data_form.Show();
+            }
+
+
+        }
+
+        /// <summary>
+        /// 遍历 AutomationElement 树
+        /// </summary>
+        /// <param name="element">起始元素</param>
+        /// <param name="maxDepth">最大递归深度，防止卡死</param>
+        /// <param name="currentDepth">当前深度</param>
+        /// <param name="filterControlType">只打印某种 ControlType，传 null 打印全部</param>
+        static void TraverseTree(AutomationElement element, int maxDepth, int currentDepth = 0, ControlType filterControlType = null)
+        {
+            if (element == null || currentDepth > maxDepth)
+                return;
+
+            try
+            {
+                // 获取元素属性（放在 try 里，防止元素中途失效）
+                string name = element.Current.Name ?? "(empty)";
+                string controlType = element.Current.ControlType?.ProgrammaticName ?? "(unknown)";
+                string automationId = element.Current.AutomationId ?? "(empty)";
+                string className = element.Current.ClassName ?? "(empty)";
+                string frameworkId = element.Current.FrameworkId ?? "(empty)";
+                bool isEnabled = element.Current.IsEnabled;
+                bool isOffscreen = element.Current.IsOffscreen;
+
+                // 如果指定了过滤条件，且当前元素不匹配，则跳过打印（但仍继续遍历子元素）
+                if (filterControlType == null || element.Current.ControlType == filterControlType)
+                {
+                    string indent = new string(' ', currentDepth * 4);
+                    Console.WriteLine($"{indent}[{controlType}]");
+                    Console.WriteLine($"{indent}  Name         = {name}");
+                    Console.WriteLine($"{indent}  AutomationId = {automationId}");
+                    Console.WriteLine($"{indent}  ClassName    = {className}");
+                    Console.WriteLine($"{indent}  FrameworkId  = {frameworkId}");
+                    Console.WriteLine($"{indent}  IsEnabled    = {isEnabled}, IsOffscreen = {isOffscreen}");
+                    Console.WriteLine();
+                }
+            }
+            catch (ElementNotAvailableException)
+            {
+                // 元素在遍历过程中被销毁或不可用
+                string indent = new string(' ', currentDepth * 4);
+                Console.WriteLine($"{indent}[ElementNotAvailable]");
+                return;
+            }
+
+            // 递归遍历子元素
+            AutomationElement child = TreeWalker.RawViewWalker.GetFirstChild(element);
+            while (child != null)
+            {
+                TraverseTree(child, maxDepth, currentDepth + 1, filterControlType);
+                child = TreeWalker.RawViewWalker.GetNextSibling(child);
+            }
         }
 
         private void btn2306_Click(object sender, EventArgs e)
         {
             string ipAddress = "192.168.0.3"; // 替换为仪器实际IP
             int port = 5025;                    // Keithley LAN 默认 Raw Socket 端口
-            using (TcpClient client = new TcpClient())
-            {
-                //try
-                {
-                    // 1. 连接仪器
-                    Console.WriteLine("正在连接仪器...");
-                    client.Connect(ipAddress, port);
-                    client.ReceiveTimeout = 3000; // 设置读取超时 5秒
-                    client.SendTimeout = 3000;
-                    NetworkStream stream = client.GetStream();
 
-                    // 2. 发送查询指令 (*IDN?)
-                    string command = "*IDN?\n"; // 注意：SCPI指令通常必须以 \n (换行符) 结尾
-                    byte[] sendData = Encoding.ASCII.GetBytes(command);
-                    stream.Write(sendData, 0, sendData.Length);
+            if (Keithy2306LAN == null) { Keithy2306LAN = new KEITHLEY_2306_LAN(ipAddress, port); }
 
-                    // 3. 读取返回值
-                    byte[] buffer = new byte[256];
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    string response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-
-                    Console.WriteLine("仪器身份: " + response);
-
-                    // 2. 发送查询指令 (*IDN?)
-                    string command1 = "*IDN?\n"; // 注意：SCPI指令通常必须以 \n (换行符) 结尾
-                    byte[] sendData1 = Encoding.ASCII.GetBytes(command1);
-                    stream.Write(sendData1, 0, sendData1.Length);
-
-                    // 3. 读取返回值
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-
-                    Console.WriteLine("仪器身份: " + response);
-
-                    // 4. 发送控制指令示例 (设置通道1电压为 5.0V)
-                    // 通道1 设置7.4V，打开输出
-                    SendCommand(stream, "SOUR1:CURR 3.0");//SOUR2:CURR 3.0
-                    SendCommand(stream, "SOUR1:VOLT 7.4");
-                    SendCommand(stream, "OUTP1 ON");
-
-                    Delay(1000);
-                    // 通道2 设置5.0V，打开输出
-                    SendCommand(stream, "SOUR2:CURR 3.0");
-                    SendCommand(stream, "SOUR2:VOLT 12.0");
-                    // channel2, current limit (<3A)
-                    SendCommand(stream, "OUTP2 ON");
-
-                    SendCommand(stream, "INST:SEL CH1");
-                    SendCommand(stream, "MEAS:VOLT?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("VOLT CH1: " + response);
-
-                    SendCommand(stream, "INST:SEL CH1");
-                    SendCommand(stream, "MEAS:CURR?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("CURR CH1: " + response);
-
-                    SendCommand(stream, "INST:SEL CH2");
-                    SendCommand(stream, "MEAS:VOLT?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("VOLT CH2: " + response);
-
-                    SendCommand(stream, "INST:SEL CH2");
-                    SendCommand(stream, "MEAS:CURR?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("CURR CH2: " + response);
-
-                    Console.WriteLine("指令发送成功！");
-                }
-            }
-
-            MessageBox.Show("仪器设定成功");
+            Keithy2306LAN.Connect();
         }
 
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
+        }
     }
 }

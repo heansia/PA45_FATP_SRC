@@ -62,12 +62,14 @@ namespace FCT.Models.DUT.PA45
 
         public const string LSS = "run \"functest LSS\"";
 
+        public const string LSS_7_230 = "run \"functest LSS 7 230\"";
+
         public const string KEYPAD = "run \"functest KEYPAD\"";
 
         public const string AUDIO = "run \"functest AUDIO\"";
 
         public const string USB_HOST = "run \"functest USB HOST\"";
-        
+
         public const string FORMFEED = "run \"functest FORMFEED\"";
 
         public const string testfeed_1 = "testfeed -1";
@@ -76,7 +78,20 @@ namespace FCT.Models.DUT.PA45
 
         public const string SetUpSleepTimer_0 = "SETUP \"System Settings,General,Power,Sleep Timer,0\"";
 
+
+        public static string setup_printer_speed(int spd)
+        {
+            return "SETUP \"PRINT DEFS,PRINT SPEED," + $"{spd}" + "\"";
+        }
+
+        public static string setup_printer_quality_darkness(int dkn)
+        {
+            return "SETUP \"PRINTING,PRINT QUALITY,DARKNESS," + $"{dkn}" + "\"";
+        }
+
+
         public const string get_sleep_timer_value = "SETUP GET \"System Settings,General,Power,Sleep Timer\"" + ",A$:?A$";
+
 
         public const string get_media_type = "SETUP GET \"Printing,Media,Media Type\"" + ",A$";
 
@@ -98,6 +113,10 @@ namespace FCT.Models.DUT.PA45
         public const string ifconfig_a = "run \"ifconfig -a\"";
 
         public const string LTS = "run " + "\"functest LTS\"";
+
+        public const string MFI_INFO = "run " + "\"functest MFI INFO\"";
+
+        public const string MFI_DETECT = "run " + "\"functest MFI INFO\"";
 
         public const string Quit = "q";
 
@@ -149,6 +168,8 @@ namespace FCT.Models.DUT.PA45
 
         public const string password = "f!j!r0cks";
 
+        public const string password1 = "pass";
+
         public const string RESTORE_DEFAULT = "run \"functest RESTORE_DEFAULT\"";
 
         public const string reboot = "run \"reboot\"";
@@ -160,6 +181,8 @@ namespace FCT.Models.DUT.PA45
         public const string SECURITY_CHIP_OTP = "run \"functest SECURITY_CHIP OTP\"";
 
         public const string SECURITY_CHIP_GEN_KEY = "run \"functest SECURITY_CHIP GEN_KEY\"";
+
+        public const string SECURITY_CHIP_VRF_KEY = "run \"functest SECURITY_CHIP VRF_KEY\"";
 
         public const string SECURITY_CHIP_GET_DEVICE_ID = "run \"functest SECURITY_CHIP GET_DEVICE_ID\"";
 
@@ -183,102 +206,46 @@ namespace FCT.Models.DUT.PA45
         {
             return "run \"testlabel " + label + "\"";
         }
+
+        #region RFID related
+
+        public const string rfid_swver = "run \"bricmd swver\"";
+
+        public const string rfid_version = "run \"bricmd version\"";
+
+        public const string rfid_read = "run \"bricmd read\"";
+
+        public const string rfid_hwregion = "run \"bricmd hwregion\"";
+
+        public const string rfid_hwid = "run \"bricmd hwid\"";
+
+        public const string rfid_hwcc = "run \"bricmd hwcc\"";
+
+        public const string rfid_hwprod = "run \"bricmd hwprod\"";
+
+        public const string rfid_functest = "run \"functest RFID\"";
+
+        public const string rfid_id_functest = "run \"functest RFID_ID\"";
+
+        public const string cat_rfid = "run \"cat /proc/printer/rfid\"";
+
+        public const string set_rfid_enable = "SETUP \"System Settings,Manage I/O,RFID,Enable\"";
+
+        public const string set_rfid_disable = "SETUP \"System Settings,Manage I/O,RFID,Disable\"";
+
+        #endregion
+
+        public const string unlock_os_cmds = "run \"unlockoscmds\"";
+
+        public const string unlock_os_cmds_ok = "run: OS command execution and authentication checks disabled until reboot";
+
+        public const string enable_rotation = "SETUP \"System Settings,Display,Screen Rotation,Auto\"";
+
+        public const string disable_rotation = "SETUP \"System Settings,Display,Screen Rotation,Auto\"";
     }
 
-    public enum SUB_COMMAND
-    {
-        REPORT,
-        MLB_ID,
-        DUART_ID,
-        IEEE1284_ID,
-        INDUSTRIAL_ID,
-        APPLICATOR_ID,
-        RFID_ID,
-        UI_MODULE_ID,
-        TOUCHLESS_ID,
-        PSU_ID,
-        CUTTER_ID,
-        TPH_ID,
-        BLUETOOTH_ID,
-        WIFI_ID,
-        ETHERNET_ID,
-        BATTERY_ID,
-        BATTERYBASE_ID,
-        HEAD_LIFT_SENSOR,
-        TT_MODULE,
-        BM,
-        LSS,
-        FRONT_BM,
-        FRONT_LSS,
-        LTS,
-        MLS,
-        RLS,
-        PRINTHEAD,
-        SELFSTRIP,
-        FORMFEED,
-        CUTTER,
-        OTP,
-        BT,
-        MOTORCURRENT,
-        DUART,
-        IEEE1284,
-        INDUSTRIAL,
-        RFID,
-
-        [arguments("HOST")]
-        USB,
-        BATTERY_TEST,
-        AUDIO,
-        LED,
-        KEYPAD,
-        LCD,
-        TOUCHSCREEN,
-        TOUCHLESS,
-        SYSTEM_NAME,
-        COMMAND_LANGUAGE,
-        SET_BTNAME,
-        MEDIA_WIDTH,
-        MEDIA_LENGTH,
-        PRINT_SPEED,
-        IP_ASSIGNMENT,
-        IP_ADDRESS,
-        NETMASK,
-        ETH_GATEWAY,
-        GETIPADDR_ETH,
-        GETIPADDR_WIFI,
-        WIFI_SETUP,
-        RTC,
-        RTC_BATTERY,
-        VERIFIER,
-        FONTS,
-        SELF_TEST,
-        PSU_TEMP,
-        GPIO,
-        MOTOR,
-        RES,
-        FRONT_ARM_LIFT,
-        LICENSES,
-        RESTORE_DEFAULT,
-        APPLICATOR,
-        REBOOT,
-        RED_REV,
-        UART,
-        MFI,
-
-        [Description("RFID CALIBRATION")]
-        RFID_CALIBRATION,
-
-        [Description("RFID READDATA")]
-        RFID_READDATA,
-
-        [Description("SET_RFID_TAG_TYPE ONLYREAD")]
-        SET_RFID_TAG_TYPE_ONLYREAD,
-
-        [Description("SET_RFID_TAG_TYPE READWRITE")]
-        SET_RFID_TAG_TYPE_READWRITE
-    }
-
-
-    
 
 }
+   
+
+  

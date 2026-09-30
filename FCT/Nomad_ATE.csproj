@@ -68,6 +68,21 @@
     <SignManifests>true</SignManifests>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Emgu.CV.UI, Version=3.4.3.3016, Culture=neutral, PublicKeyToken=7281126722ab4438, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Emgu.CV.UI.GL, Version=3.4.3.3016, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.GL.dll</HintPath>
+    </Reference>
+    <Reference Include="Emgu.CV.World, Version=3.4.3.3016, Culture=neutral, PublicKeyToken=7281126722ab4438, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.World.dll</HintPath>
+    </Reference>
+    <Reference Include="HZH_Controls">
+      <HintPath>..\..\..\..\..\Plantform\mvc_winform\mvc_winform\Libs\HZH_Controls.dll</HintPath>
+    </Reference>
     <Reference Include="Interop.LabelManager2, Version=6.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -118,12 +133,19 @@
     <Reference Include="UIAutomationClientsideProviders" />
     <Reference Include="UIAutomationTypes" />
     <Reference Include="WindowsBase" />
+    <Reference Include="ZedGraph, Version=5.1.7.430, Culture=neutral, PublicKeyToken=02a83cbd123fcd60, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\libemgucv-windesktop-3.4.3.3016\ZedGraph.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Controllers\ProductController.cs" />
     <Compile Include="CustomizedAttribute.cs" />
     <Compile Include="CustomizedEvents.cs" />
-    <Compile Include="Extension\StringExt.cs" />
+    <Compile Include="Extension\CharExtension.cs" />
+    <Compile Include="Extension\EnumExtension.cs" />
+    <Compile Include="Extension\IntExtension.cs" />
+    <Compile Include="Extension\StringExtension.cs" />
     <Compile Include="Global.cs" />
     <Compile Include="Models\DUT\BT_Module\BT_Module.cs" />
     <Compile Include="Models\DUT\DUT.cs" />
@@ -131,8 +153,14 @@
     <Compile Include="Models\DUT\LowSensor\LowSensor.cs" />
     <Compile Include="Models\DUT\LTSSensor\LTSSensor.cs" />
     <Compile Include="Models\DUT\PA45\argumentsAttribute.cs" />
+    <Compile Include="Models\DUT\PA45\Communicate_Type.cs" />
+    <Compile Include="Models\DUT\PA45\Flash_Firmware_Status.cs" />
+    <Compile Include="Models\DUT\PA45\MCU_DO_Status.cs" />
     <Compile Include="Models\DUT\PA45\Media_Type.cs" />
+    <Compile Include="Models\DUT\PA45\PA45_FCT_Commands.cs" />
+    <Compile Include="Models\DUT\PA45\PA45_Sensor.cs" />
     <Compile Include="Models\DUT\PA45\Printer_Error_Code.cs" />
+    <Compile Include="Models\DUT\PA45\SUB_COMMAND.cs" />
     <Compile Include="Models\DUT\PA45\testlabel_list.cs" />
     <Compile Include="Models\DUT\PA45_KeyBoard\PA45_KeyBoard.cs" />
     <Compile Include="Models\DUT\PA45\PA45.cs" />
@@ -148,6 +176,9 @@
     <Compile Include="Models\DUT\USB2ETH\USB2ETH.cs" />
     <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module_Ext.cs" />
     <Compile Include="Models\DUT\WiFi_BT_Module\WiFi_BT_Module.cs" />
+    <Compile Include="Models\IDevice.cs" />
+    <Compile Include="Models\Instrument\DI_Status.cs" />
+    <Compile Include="Models\Instrument\RelayCard\SSGRelayCard3.cs" />
     <Compile Include="Models\Products\LowSensor.cs" />
     <Compile Include="Models\Test_Proc_Error_Code.cs" />
     <Compile Include="Models\Instrument\CaptureCard\SSGCaptureCard1.cs" />
@@ -192,20 +223,22 @@
     <Compile Include="Models\TestStatusListener.cs" />
     <Compile Include="Service\DUT.Service\HON_Printer_Log_Parser.cs" />
     <Compile Include="Service\SFCS.Service\SFCS_Service.cs" />
-    <Compile Include="Utilities\CsvHelper.cs" />
-    <Compile Include="Utilities\DataAccess.cs" />
-    <Compile Include="Utilities\ICardHelper.cs" />
-    <Compile Include="Utilities\INI_Parser.cs" />
-    <Compile Include="Utilities\JsonHelpler.cs" />
-    <Compile Include="Utilities\LabelPrintHelper.cs" />
-    <Compile Include="Utilities\ProcessHelper.cs" />
-    <Compile Include="Utilities\RegexHelper.cs" />
-    <Compile Include="Utilities\RelayHelper.cs" />
-    <Compile Include="Utilities\SFCHepler.cs" />
-    <Compile Include="Utilities\SMT_SFCSHelper.cs" />
-    <Compile Include="Utilities\USBHelper.cs" />
-    <Compile Include="Utilities\WinDeviceHelper.cs" />
-    <Compile Include="Utilities\XmlHelper.cs" />
+    <Compile Include="Util\CsvHelper.cs" />
+    <Compile Include="Util\DataAccess.cs" />
+    <Compile Include="Util\EmguCvHelper.cs" />
+    <Compile Include="Util\ICardHelper.cs" />
+    <Compile Include="Util\INI_Parser.cs" />
+    <Compile Include="Util\JsonHelpler.cs" />
+    <Compile Include="Util\LabelPrintHelper.cs" />
+    <Compile Include="Util\ProcessHelper.cs" />
+    <Compile Include="Util\RegexHelper.cs" />
+    <Compile Include="Util\RelayHelper.cs" />
+    <Compile Include="Util\SFCHepler.cs" />
+    <Compile Include="Util\SMT_SFCSHelper.cs" />
+    <Compile Include="Util\USBHelper.cs" />
+    <Compile Include="Util\WinDeviceHelper.cs" />
+    <Compile Include="Util\WinUIHelper.cs" />
+    <Compile Include="Util\XmlHelper.cs" />
     <Compile Include="ViewLayer\ControlLibrary\CircleLabel.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -264,6 +297,12 @@
     </Compile>
     <Compile Include="ViewLayer\FormLibrary\frmSFCS.Designer.cs">
       <DependentUpon>frmSFCS.cs</DependentUpon>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFC_Get_Special.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ViewLayer\FormLibrary\frmSFC_Get_Special.Designer.cs">
+      <DependentUpon>frmSFC_Get_Special.cs</DependentUpon>
     </Compile>
     <Compile Include="ViewLayer\FormLibrary\frmSFTP.cs">
       <SubType>Form</SubType>
@@ -326,6 +365,9 @@
     <EmbeddedResource Include="ViewLayer\FormLibrary\frmSFCS.resx">
       <DependentUpon>frmSFCS.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="ViewLayer\FormLibrary\frmSFC_Get_Special.resx">
+      <DependentUpon>frmSFC_Get_Special.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="ViewLayer\FormLibrary\frmSFTP.resx">
       <DependentUpon>frmSFTP.cs</DependentUpon>
     </EmbeddedResource>
@@ -338,6 +380,7 @@
     <EmbeddedResource Include="ViewLayer\FormLibrary\frmACCPrint.resx">
       <DependentUpon>frmACCPrint.cs</DependentUpon>
     </EmbeddedResource>
+    <None Include="ClassDiagram1.cd" />
     <None Include="Nomad_ATE_TemporaryKey.pfx" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -361,6 +404,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="BradyLogoNew.png" />
     <Content Include="combined %281%29.ico" />
     <Content Include="combined.ico" />
     <Content Include="Lib\Ivi.Visa.Interop_32\Ivi.Visa.Interop.dll" />
@@ -368,6 +412,15 @@
     <Content Include="Lib\Ivi.Visa\Ivi.Visa.dll" />
     <Content Include="Lib\Ivi.Visa\Ivi.Visa.xml" />
     <Content Include="Lib\Keysight.Visa\Keysight.Visa.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.GL.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.GL.xml" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.UI.xml" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.World.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.World.NetStandard1_4.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\Emgu.CV.World.xml" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\ZedGraph.dll" />
+    <Content Include="Lib\libemgucv-windesktop-3.4.3.3016\ZedGraph.license.txt" />
     <Content Include="Lib\NationalInstruments.Visa\NationalInstruments.Visa.dll" />
     <Content Include="Lib\NationalInstruments.Visa\NationalInstruments.Visa.xml" />
     <Content Include="tester1.ico" />

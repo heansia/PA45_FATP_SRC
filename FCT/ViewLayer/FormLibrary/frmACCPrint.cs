@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-using PRINTER = FCT.Utilities.LabelPrintHelper;
+using PRINTER = FCT.Util.LabelPrintHelper;
 
 namespace FCT.ViewLayer.FormLibrary
 {

@@ -99,6 +99,6 @@ namespace FCT.Models.Products
             return true;
         }
 
-
+        public const string PartName = "910100114390_BT_Wifi_board";
     }
 }
