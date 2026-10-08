@@ -14,5 +14,11 @@ namespace FCT.ViewLayer.ControlLibrary
         {
             InitializeComponent();
         }
+
+        public bool bResult
+        {
+            get;
+            set;
+        }
     }
 }

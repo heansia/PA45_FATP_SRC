@@ -43,6 +43,11 @@ namespace FCT.Models.DUT.PA45
 
         public const string motor_cleanfeed_1 = "functest MOTOR CLEANFEED -500";
 
+        public static string MotorCleanFeed(int steps)
+        {
+            return $"functest MOTOR CLEANFEED {steps}";
+        }
+
         public static string GetMemoryAddressValue(string address)
         {
             return $"memtool -32 {address} 1";

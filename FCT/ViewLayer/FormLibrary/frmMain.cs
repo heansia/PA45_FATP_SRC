@@ -5525,7 +5525,7 @@ namespace FCT.ViewLayer.FormLibrary
             string value = "", tmpValue = "";
 
             if (!check_unlock_os_cmds())
-            { 
+            {
                 value = "RUN_OS_CMDS_DISABLE";
                 rlt = false;
                 goto End;
@@ -12278,12 +12278,10 @@ memtool -32 0x020A4004=0x1E7F 6707
             if (item.Name.Contains("J14"))
             {
                 relayIndex = 7;
-
             }
             else
             {
                 relayIndex = 6;
-
             }
 
             RelayCard2.SetRelayOn(relayIndex);
@@ -13913,6 +13911,10 @@ memtool -32 0x020A4004=0x1E7F 6707
                     item.Result = Test_MB_FCT_MotorTest(index, item);
                     break;
 
+                case "Motor Test -1":
+                    item.Result = Test_MB_FCT_MotorTest(index, item);
+                    break;
+
                 case "Super CAP Low Voltage Detector(high)":
                     item.Result = Test_MB_FCT_SuperCapLowDetect(index, item);
                     break;
@@ -14736,7 +14738,6 @@ memtool -32 0x020A4004=0x1E7F 6707
             return tmpValue;
         }
 
-
         private string Write_Read_SeriPort_6000(Communicate_Type cType, string text, int milScd = 6000)
         {
             string tmpValue = "";
@@ -14783,11 +14784,9 @@ memtool -32 0x020A4004=0x1E7F 6707
             {
                 AppendRuntimeLog(tmpValue);
             }
-
-
+            
             return tmpValue;
         }
-
 
         private bool test_feed_1(string pic_path = "")
         {
@@ -15476,7 +15475,7 @@ memtool -32 0x020A4004=0x1E7F 6707
 
                 AppendUSBLog1($"{sn_List[i].Trim()}{'\t'}{tmpVal}{'\t'}{barcode}");
             }
-            
+
             /*
             // 桌面根元素，全局所有窗口所有控件
             AutomationElement desktop = AutomationElement.RootElement;
@@ -15525,90 +15524,6 @@ memtool -32 0x020A4004=0x1E7F 6707
                 catch (Exception ex)
                 {
                     Console.WriteLine($"读取按钮异常：{ex.Message}");
-                }
-            }
-            */
-
-            /*
-            string ipAddress = "192.168.0.3"; // 替换为仪器实际IP
-            int port = 5025;                    // Keithley LAN 默认 Raw Socket 端口
-            using (TcpClient client = new TcpClient())
-            {
-                //try
-                {
-                    // 1. 连接仪器
-                    Console.WriteLine("正在连接仪器...");
-                    client.Connect(ipAddress, port);
-                    client.ReceiveTimeout = 3000; // 设置读取超时 5秒
-                    client.SendTimeout = 3000;
-                    NetworkStream stream = client.GetStream();
-
-                    // 2. 发送查询指令 (*IDN?)
-                    string command = "*IDN?\n"; // 注意：SCPI指令通常必须以 \n (换行符) 结尾
-                    byte[] sendData = Encoding.ASCII.GetBytes(command);
-                    stream.Write(sendData, 0, sendData.Length);
-
-                    // 3. 读取返回值
-                    byte[] buffer = new byte[256];
-                    int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    string response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-
-                    Console.WriteLine("仪器身份: " + response);
-
-                    // 2. 发送查询指令 (*IDN?)
-                    string command1 = "*IDN?\n"; // 注意：SCPI指令通常必须以 \n (换行符) 结尾
-                    byte[] sendData1 = Encoding.ASCII.GetBytes(command1);
-                    stream.Write(sendData1, 0, sendData1.Length);
-
-                    // 3. 读取返回值
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-
-                    Console.WriteLine("仪器身份: " + response);
-                    
-                    // 4. 发送控制指令示例 (设置通道1电压为 5.0V)
-                    // 通道1 设置7.4V，打开输出
-                    SendCommand(stream, "SOUR1:CURR 3.0");//SOUR2:CURR 3.0
-                    SendCommand(stream, "SOUR1:VOLT 7.4");
-                    SendCommand(stream, "OUTP1 ON");
-
-                    Delay(1000);
-                    // 通道2 设置5.0V，打开输出
-                    SendCommand(stream, "SOUR2:CURR 3.0");
-                    SendCommand(stream, "SOUR2:VOLT 12.0");
-                    // channel2, current limit (<3A)
-                    SendCommand(stream, "OUTP2 ON");
-
-                    SendCommand(stream, "INST:SEL CH1");
-                    SendCommand(stream, "MEAS:VOLT?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("VOLT CH1: " + response);
-
-                    SendCommand(stream, "INST:SEL CH1");
-                    SendCommand(stream, "MEAS:CURR?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("CURR CH1: " + response);
-
-                    SendCommand(stream, "INST:SEL CH2");
-                    SendCommand(stream, "MEAS:VOLT?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("VOLT CH2: " + response);
-
-                    SendCommand(stream, "INST:SEL CH2");
-                    SendCommand(stream, "MEAS:CURR?");
-                    Array.Clear(buffer, 0, buffer.Length);
-                    bytesRead = stream.Read(buffer, 0, buffer.Length);
-                    response = Encoding.ASCII.GetString(buffer, 0, bytesRead).Trim();
-                    Console.WriteLine("CURR CH2: " + response);
-
-                    Console.WriteLine("指令发送成功！");
                 }
             }
             */
